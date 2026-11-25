@@ -117,12 +117,12 @@ mark { background: rgba(217, 166, 64, 0.30); color: inherit; border-radius: 2px;
 .roster-list { list-style: none; margin: 0; padding: 0; }
 .r-row { display: grid; grid-template-columns: 2.25rem minmax(0, 1fr) 8.5rem auto; gap: 0.5rem 1.25rem; align-items: center; padding: 1.1rem 1.25rem; }
 .r-row + .r-row { border-top: 1px solid var(--line-soft); }
-.r-tick { width: 2.25rem; height: 2.25rem; border-radius: 50%; border: 2px solid var(--line); display: grid; place-items: center; color: var(--bone-faint); }
+.r-tick { width: 2.25rem; height: 2.25rem; display: grid; place-items: center; color: var(--bone-faint); }
 .r-tick svg { width: 1.3rem; height: 1.3rem; }
 .r-tick path { fill: none; stroke: currentColor; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 30; stroke-dashoffset: 30; }
-.r-row[data-state="ready"] .r-tick { border-color: var(--ready); color: var(--ready); background: var(--ready-wash); }
+.r-row[data-state="ready"] .r-tick { color: var(--ready); }
 .r-row[data-state="ready"] .r-tick path { stroke-dashoffset: 0; transition: stroke-dashoffset 0.32s ease-out; }
-.r-row[data-state="away"] .r-tick { border-color: var(--rust); color: var(--rust); }
+.r-row[data-state="away"] .r-tick { color: var(--rust); }
 .r-row[data-state="away"] .r-tick path { stroke-dashoffset: 0; }
 .r-who { min-width: 0; }
 .r-who p { color: var(--bone-dim); }
@@ -380,7 +380,6 @@ main, .foot { position: relative; z-index: 2; }
 
 .r-row { transition: background-color 0.15s; }
 .r-row:hover { background: rgba(255, 255, 255, 0.022); }
-.r-row[data-state="ready"] .r-tick { box-shadow: none; }
 .r-who { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 1rem; align-items: start; }
 .r-who > * { grid-column: 2; }
 .r-who > .glyph { grid-column: 1; grid-row: 1 / span 3; }
@@ -493,9 +492,8 @@ code { background: var(--sunk); border-color: var(--line); }
 .g { border-color: var(--line); background: var(--sunk); color: var(--bone-dim); }
 
 /* ready, away */
-.r-tick { border-color: var(--bone-faint); background: var(--sunk); }
-.r-row[data-state="ready"] .r-tick { border-color: var(--sel-line); color: var(--ready); background: var(--ready-wash); }
-.r-row[data-state="away"] .r-tick { border-color: var(--bad); color: var(--bad); }
+.r-row[data-state="ready"] .r-tick { color: var(--ready); }
+.r-row[data-state="away"] .r-tick { color: var(--bad); }
 .glyph { border-color: var(--line); }
 .glyph .hl { stroke: var(--gold); }
 .glyph .hlf { fill: var(--gold); }
@@ -542,7 +540,7 @@ img.mark { width: 1.75rem; height: 1.75rem; display: block; }
 .tabs button .aicon-s { vertical-align: -0.12em; }
 .seg span, .addon-pick span { display: flex; align-items: center; }
 
-.r-tick img.r-check { width: 1.5rem; height: 1.5rem; display: block; opacity: 0; transform: scale(1.6); }
+.r-tick img.r-check { width: 2rem; height: 2rem; display: block; opacity: 0; transform: scale(1.6); }
 .r-row[data-state="ready"] .r-tick img.r-check { opacity: 1; transform: none; transition: opacity 0.25s ease-out, transform 0.25s ease-out; }
 .r-dash { display: block; width: 0.9rem; height: 3px; border-radius: 1px; background: currentColor; }
 img.done-tick { width: 3rem; height: 3rem; display: block; }
