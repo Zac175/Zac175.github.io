@@ -13,7 +13,7 @@ window.SITE_CONFIG = {
   //   New Webhook > pick the channel > Copy Webhook URL
   // owner.html (open it from the site: /owner.html) checks the address and
   // sends a test message before you save it here.
-  reportWebhook: "",
+  reportWebhook: "https://discord.com/api/webhooks/1575025520628731994/7UQMSH4aEHxLihHc-56msmjo3LPw0ZOpU1KkO9Pqstg6QHi2enOgDpgF7aQwekz_UW4r",
 
   // Want feature suggestions in a channel of their own? Paste that channel's
   // webhook here. Leave empty and they go where reports go.
