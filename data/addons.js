@@ -1,13 +1,17 @@
-// The four addons this site covers. One entry each; the pages are built from
-// this list, so adding an addon here adds it everywhere.
+// What this site covers: the four addons and WowTiler. One entry each; the
+// pages are built from this list, so adding one here adds it everywhere.
 //   repo        its GitHub repository (releases and known problems are read from it)
 //   curse       its CurseForge page
 //   games       where it runs: era, tbc, forever, retail
 //   code        the short tag at the front of a report's reference
 //   commands    chat commands worth knowing (shown on the Help page)
+//   icon        the addon's own icon, as it ships (assets/icons)
+//   kind        "app" for a Windows program: no CurseForge page and no game
+//               versions; its download is the newest GitHub release
 window.ZAC_ADDONS = [
   {
     id: "zacui",
+    icon: "assets/icons/zacui.png",
     name: "ZacUI",
     repo: "ZacUI",
     curse: "https://www.curseforge.com/wow/addons/zacui",
@@ -25,6 +29,7 @@ window.ZAC_ADDONS = [
   },
   {
     id: "readycheck",
+    icon: "assets/icons/readycheck.png",
     name: "Readycheck",
     repo: "Readycheck",
     curse: "https://www.curseforge.com/wow/addons/ready-check",
@@ -40,6 +45,7 @@ window.ZAC_ADDONS = [
   },
   {
     id: "defaultframes",
+    icon: "assets/icons/defaultframes.png",
     name: "DefaultFrames",
     repo: "OldRaidFrames",
     curse: "https://www.curseforge.com/wow/addons/defaultframes",
@@ -56,6 +62,7 @@ window.ZAC_ADDONS = [
   },
   {
     id: "stacked",
+    icon: "assets/icons/stacked.png",   // (it ships without one: this is ZacUI's raid frames glyph)
     name: "Stacked Raid Groups",
     repo: "StackedRaidGroups",
     curse: "https://www.curseforge.com/wow/addons/stacked-raid-groups",
@@ -67,6 +74,26 @@ window.ZAC_ADDONS = [
       ["/srg", "Open the options."],
       ["/srg status", "What the addon is doing right now, and its version. Paste this into a report."],
       ["/srg guard", "What the combat guard does, and how to switch it off."],
+    ],
+  },
+  {
+    id: "wowtiler",
+    icon: "assets/icons/wowtiler.png",
+    kind: "app",
+    name: "WowTiler",
+    repo: "WowTiler",
+    curse: "",
+    code: "WT",
+    games: [],
+    line: "A small Windows app that tiles your WoW clients on one monitor or two, keeps every window 16:9, and swaps any client into the main slot with a Shift+click or a hotkey. It only moves and resizes windows.",
+    version: "The window's title bar reads WoW Window Tiler and the version.",
+    commandsTitle: "WowTiler's keys",
+    commands: [
+      ["Shift + click an alt", "It becomes the main. The key can be changed."],
+      ["Ctrl+Alt+Right / Left", "The next or previous client becomes the main."],
+      ["Ctrl+Alt+1 ... 9", "That slot becomes the main."],
+      ["Ctrl+Alt+Home", "Tile everything again."],
+      ["Ctrl+Alt+End", "Raid mode on or off: the main full-monitor and borderless."],
     ],
   },
 ];

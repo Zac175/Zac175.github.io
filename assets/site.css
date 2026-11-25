@@ -10,27 +10,40 @@
 
 :root {
   color-scheme: dark;
-  --ground: #242830;        /* the page */
-  --raised: #2c313a;        /* panels that sit on it */
-  --sunk: #1b1e24;          /* fields, code, the footer */
-  --line: #3d444f;
-  --line-soft: #333944;
-  --bone: #ebe6da;          /* text */
-  --bone-dim: #b3b0a6;
-  --bone-faint: #878a8c;
-  --ready: #66c777;
-  --ready-ink: #10210f;     /* text on a green button */
-  --ready-wash: rgba(102, 199, 119, 0.12);
-  --gold: #e6bd5c;
-  --fixed: #77b2ee;
-  --rust: #d9785a;
-  --rust-wash: rgba(217, 120, 90, 0.12);
+  /* THE ADDONS' OWN PALETTE (ZacUI Core_Colors.lua, the same family Readycheck paints from):
+     flat dark greys, black one-pixel borders, gold as the one accent. No gold title bars:
+     the addons dropped those (Zac, 2026-11-24). The names on the left are this
+     file's; the note on the right is where each value comes from. */
+  --ground: #1c1c1c;        /* ui.windowBg      0.110 */
+  --raised: #262626;        /* ui.cardBg        0.150 */
+  --field: #292929;         /* ui.elementBg     0.160 */
+  --head: #242424;          /* ui.headerBg      0.140 */
+  --sunk: #181818;          /* sidebar.bg       0.095 */
+  --btn: #2a2a2a;           /* button.bg        0.165 */
+  --btn-hover: #373737;     /* button.hover     0.215 */
+  --line: #000000;          /* ui.border */
+  --line-soft: rgba(255, 255, 255, 0.07);   /* a divider inside a panel */
+  --bone: #e6e6e6;          /* text.normal      0.90 */
+  --bone-dim: #999999;      /* text.gray        0.60 */
+  --bone-faint: #737373;    /* text.disabled    0.45 */
+  --ready: #80cc80;         /* text.green: ticks, "ready" */
+  --sel-line: #599e59;      /* ui.borderSelected: the ring on what is selected */
+  --ready-wash: #263626;    /* button.active: the fill of what is selected */
+  --ready-ink: #1c1c1c;     /* text on a filled button */
+  --gold: #d9a640;          /* ui.accent / ui.borderHover: hover, focus, the thin rules */
+  --gold-wash: rgba(217, 166, 64, 0.16);
+  --title: #ffd100;         /* text.gold: titles */
+  --fixed: #66b3ff;         /* text.blue */
+  --fixed-wash: rgba(102, 179, 255, 0.12);
+  --rust: #ff9933;          /* text.orange: needs attention */
+  --rust-wash: rgba(255, 153, 51, 0.10);
+  --bad: #ff4d4d;           /* text.red */
 
-  --head: "Marcellus", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  --head-font: "Marcellus", "Palatino Linotype", "Book Antiqua", Georgia, serif;
   --body: "Alegreya Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --mono: ui-monospace, "Cascadia Mono", Consolas, "Liberation Mono", monospace;
 
-  --r: 5px;
+  --r: 2px;                 /* the addons' windows are square-cornered */
   --gap: 1.5rem;
 }
 
@@ -45,7 +58,7 @@ body {
 main { flex: 1; outline: none; }
 [hidden] { display: none !important; }
 
-h1, h2, h3 { font-family: var(--head); font-weight: 400; margin: 0; text-wrap: balance; }
+h1, h2, h3 { font-family: var(--head-font); font-weight: 400; margin: 0; text-wrap: balance; }
 h1 { font-size: clamp(2rem, 4.4vw, 3.1rem); line-height: 1.12; letter-spacing: -0.005em; }
 h2 { font-size: 1.55rem; line-height: 1.2; }
 h3 { font-size: 1.2rem; line-height: 1.25; }
@@ -55,7 +68,7 @@ a:hover { color: var(--gold); text-decoration-color: var(--gold); }
 em { color: var(--bone-faint); font-style: normal; font-size: 0.92em; }
 code, .mono { font-family: var(--mono); font-size: 0.9em; }
 code { background: var(--sunk); border: 1px solid var(--line-soft); border-radius: 3px; padding: 0.1em 0.4em; }
-mark { background: rgba(230, 189, 92, 0.28); color: inherit; border-radius: 2px; padding: 0 0.1em; }
+mark { background: rgba(217, 166, 64, 0.30); color: inherit; border-radius: 2px; padding: 0 0.1em; }
 
 :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 3px; }
 
@@ -83,9 +96,9 @@ mark { background: rgba(230, 189, 92, 0.28); color: inherit; border-radius: 2px;
 .link:hover { color: var(--gold); text-decoration-color: var(--gold); }
 
 /* ---------- top bar ---------- */
-.top { position: sticky; top: 0; z-index: 20; background: rgba(36, 40, 48, 0.94); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line-soft); }
+.top { position: sticky; top: 0; z-index: 20; background: var(--sunk); border-bottom: 1px solid var(--line); }
 .top-in { display: flex; align-items: center; gap: 0.5rem 1.75rem; flex-wrap: wrap; padding-block: 0.7rem; }
-.brand { font-family: var(--head); font-size: 1.3rem; text-decoration: none; margin-right: auto; }
+.brand { font-family: var(--head-font); font-size: 1.3rem; text-decoration: none; margin-right: auto; }
 .nav { display: flex; gap: 1.5rem; }
 .nav a { text-decoration: none; color: var(--bone-dim); padding: 0.3rem 0; border-bottom: 2px solid transparent; }
 .nav a:hover { color: var(--gold); }
@@ -163,7 +176,7 @@ select:hover, input:hover, textarea:hover { border-color: var(--bone-faint); }
 /* ---------- what changed ---------- */
 .page-h { font-size: clamp(1.9rem, 3.6vw, 2.6rem); padding-top: clamp(1.75rem, 4vw, 3rem); }
 .tabs { display: flex; flex-wrap: wrap; gap: 0.25rem 1.75rem; margin-top: 1.25rem; border-bottom: 1px solid var(--line); }
-.tabs button { font: 400 1.2rem/1.2 var(--head); color: var(--bone-dim); background: none; border: 0; border-bottom: 2px solid transparent; padding: 0.55rem 0; margin-bottom: -1px; cursor: pointer; }
+.tabs button { font: 400 1.2rem/1.2 var(--head-font); color: var(--bone-dim); background: none; border: 0; border-bottom: 2px solid transparent; padding: 0.55rem 0; margin-bottom: -1px; cursor: pointer; }
 .tabs button:hover { color: var(--gold); }
 .tabs button[aria-pressed="true"] { color: var(--ready); border-bottom-color: var(--ready); }
 .tabs small { font: 400 0.85rem var(--body); color: var(--bone-faint); margin-left: 0.4em; font-variant-numeric: tabular-nums; }
@@ -208,7 +221,7 @@ select:hover, input:hover, textarea:hover { border-color: var(--bone-faint); }
 
 fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
 .step { margin-top: 2rem; display: grid; gap: 1rem; }
-.step > legend { font: 400 1.3rem/1.2 var(--head); padding: 0; margin-bottom: 0.9rem; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.step > legend { font: 400 1.3rem/1.2 var(--head-font); padding: 0; margin-bottom: 0.9rem; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
 .num { display: inline-grid; place-items: center; width: 1.8rem; height: 1.8rem; border-radius: 50%; border: 1px solid var(--line); font: 700 0.95rem/1 var(--body); color: var(--bone-dim); flex: none; }
 .seg, .addon-pick { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .seg label, .addon-pick label { position: relative; cursor: pointer; }
@@ -307,19 +320,18 @@ table.games { border-collapse: collapse; width: 100%; font-size: 0.97rem; }
    The dressing: ground, panels, the raid picture, the addon drawings.
    Same colours as above; nothing here changes what a control means.
    ===================================================================== */
-::selection { background: rgba(102, 199, 119, 0.3); }
+::selection { background: rgba(217, 166, 64, 0.35); }
 html { scrollbar-color: var(--line) var(--sunk); }
 
 /* a lit corner and a little grain, so the slate is not a flat fill */
 body {
   background:
-    radial-gradient(60rem 34rem at 12% -6rem, rgba(102, 199, 119, 0.10), transparent 70%),
-    radial-gradient(48rem 30rem at 96% 4rem, rgba(119, 178, 238, 0.07), transparent 70%),
+    radial-gradient(60rem 30rem at 85% -8rem, rgba(217, 166, 64, 0.07), transparent 70%),
     var(--ground);
   background-attachment: scroll;
 }
 body::after {
-  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: 0.055; mix-blend-mode: overlay;
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: 0.04; mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 .top { z-index: 20; }
@@ -328,40 +340,34 @@ main, .foot { position: relative; z-index: 2; }
 /* the mark beside the name */
 .brand { display: inline-flex; align-items: center; gap: 0.55rem; }
 .mark { width: 1.5rem; height: 1.5rem; flex: none; }
-.mark-d { fill: var(--ready-wash); stroke: var(--ready); stroke-width: 1.6; stroke-linejoin: round; }
+.mark-d { fill: var(--gold-wash); stroke: var(--gold); stroke-width: 1.6; stroke-linejoin: round; }
 .mark-c { fill: none; stroke: var(--ready); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
-.brand:hover .mark-d, .brand:hover .mark-c { stroke: var(--gold); }
+.brand:hover .mark-d { stroke: var(--title); }
 
 /* buttons get a little weight */
-.btn { background: linear-gradient(rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05); transition: border-color 0.12s, color 0.12s, background-color 0.12s; }
-.btn-go { background: linear-gradient(#74d184, var(--ready)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 1px 0 rgba(0, 0, 0, 0.35); }
-.btn-go:hover { background: linear-gradient(#efca72, var(--gold)); }
+.btn { background: var(--btn); box-shadow: none; transition: border-color 0.12s, color 0.12s, background-color 0.12s; }
+.btn-go { background: var(--gold); box-shadow: none; }
+.btn-go:hover { background: #ecc063; }
 .top-report[aria-current="page"] { background: transparent; box-shadow: none; }
 
 /* panels: one recipe for everything that sits on the ground */
 .roster, .side-card, .done, .since-card, .help article, .cmds > div, .known-list li {
-  background: linear-gradient(rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0) 5rem), var(--raised);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 12px 28px -18px rgba(0, 0, 0, 0.7);
+  background: var(--raised);
+  box-shadow: 0 12px 28px -18px rgba(0, 0, 0, 0.8);
 }
-/* corner marks on the two panels that matter most: where you get the addons, and "sent" */
-.roster, .done { position: relative; }
-.roster::before, .roster::after, .done::before, .done::after { content: ""; position: absolute; width: 14px; height: 14px; border: 2px solid var(--ready); pointer-events: none; }
-.roster::before, .done::before { left: -1px; top: -1px; border-right: 0; border-bottom: 0; border-top-left-radius: var(--r); }
-.roster::after, .done::after { right: -1px; bottom: -1px; border-left: 0; border-top: 0; border-bottom-right-radius: var(--r); }
-
 /* ---------- the top of the home page ---------- */
 .hero-top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 27rem); gap: 2rem 3.5rem; align-items: center; }
 .hero-act { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.5rem; }
 
-.raid { margin: 0; padding: 1rem; border: 1px solid var(--line); border-radius: var(--r); background: rgba(27, 30, 36, 0.72); box-shadow: 0 18px 40px -22px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.04); }
+.raid { margin: 0; padding: 1rem; border: 1px solid var(--line); border-radius: var(--r); background: var(--sunk); box-shadow: 0 18px 40px -22px rgba(0, 0, 0, 0.85); }
 .raid-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.7rem 0.55rem; }
 .grp { display: grid; gap: 3px; }
-.cell { position: relative; display: block; height: 15px; background: #15171c; border: 1px solid #0d0f12; border-radius: 2px; overflow: hidden; }
+.cell { position: relative; display: block; height: 15px; background: #121212; border: 1px solid #000; border-radius: 0; overflow: hidden; }
 .cell::before { content: ""; position: absolute; inset: 0 auto 0 0; width: calc(var(--hp) * 100%); background: linear-gradient(rgba(255, 255, 255, 0.22), rgba(0, 0, 0, 0.12)), var(--c); opacity: 0.34; transition: opacity 0.35s; }
-.cell::after { content: ""; position: absolute; right: 3px; top: 50%; width: 9px; height: 9px; margin-top: -4.5px; border-radius: 50%; border: 1.5px solid rgba(235, 230, 218, 0.28); }
+.cell::after { content: ""; position: absolute; right: 3px; top: 50%; width: 9px; height: 9px; margin-top: -4.5px; border-radius: 50%; border: 1.5px solid rgba(230, 230, 230, 0.25); }
 .cell[data-s="ready"]::before { opacity: 0.78; }
 .cell[data-s="ready"]::after {
-  border: 0; border-radius: 0; background: #eafbe9;
+  border: 0; border-radius: 0; background: #ffffff;
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 6.5l2.7 2.7L10 3.4' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 6.5l2.7 2.7L10 3.4' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
   animation: pop 0.28s ease-out;
@@ -371,11 +377,10 @@ main, .foot { position: relative; z-index: 2; }
 .raid figcaption .link { color: var(--bone-dim); }
 
 /* ---------- the roster, dressed ---------- */
-.roster-head h2::before, .since h2::before, .known h2::before, .cmd-h::before, .reach h2::before { content: ""; display: block; width: 1.75rem; height: 2px; background: var(--ready); margin-bottom: 0.6rem; }
-.roster-head h2::before { display: none; }
+
 .r-row { transition: background-color 0.15s; }
 .r-row:hover { background: rgba(255, 255, 255, 0.022); }
-.r-row[data-state="ready"] .r-tick { box-shadow: 0 0 0 4px rgba(102, 199, 119, 0.08); }
+.r-row[data-state="ready"] .r-tick { box-shadow: none; }
 .r-who { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 1rem; align-items: start; }
 .r-who > * { grid-column: 2; }
 .r-who > .glyph { grid-column: 1; grid-row: 1 / span 3; }
@@ -389,12 +394,12 @@ main, .foot { position: relative; z-index: 2; }
 /* ---------- since ---------- */
 .since-form select { box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35); }
 select, input[type="text"], input[type="search"], textarea { box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35); transition: border-color 0.12s; }
-select:focus, input:focus, textarea:focus { border-color: var(--ready); outline: none; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35), 0 0 0 3px rgba(102, 199, 119, 0.16); }
+select:focus, input:focus, textarea:focus { border-color: var(--gold); outline: none; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35), 0 0 0 3px var(--gold-wash); }
 
 /* the kind of change, as a small plate */
 .sec h3 { display: inline-flex; padding: 0.3em 0.65em 0.3em 0.55em; border-radius: 3px; background: rgba(255, 255, 255, 0.04); }
 .sec-added h3 { background: var(--ready-wash); }
-.sec-fixed h3 { background: rgba(119, 178, 238, 0.13); }
+.sec-fixed h3 { background: var(--fixed-wash); }
 .sec-removed h3 { background: var(--rust-wash); }
 .sec ul { margin-top: 0.1rem; }
 
@@ -405,29 +410,29 @@ select:focus, input:focus, textarea:focus { border-color: var(--ready); outline:
   .ver-side { padding-block: 1.6rem; text-align: right; }
   .ver-body { border-left: 1px solid var(--line); padding: 1.6rem 0 1.6rem 1.75rem; }
   .ver-body::before { content: ""; position: absolute; left: -5px; top: 2.15rem; width: 9px; height: 9px; border-radius: 50%; background: var(--ground); border: 2px solid var(--bone-faint); }
-  .ver:first-child .ver-body::before { border-color: var(--ready); background: var(--ready); box-shadow: 0 0 0 4px rgba(102, 199, 119, 0.14); }
+  .ver:first-child .ver-body::before { border-color: var(--gold); background: var(--gold); box-shadow: 0 0 0 4px var(--gold-wash); }
   .ver.is-target .ver-body::before { border-color: var(--ready); }
   .ver:hover .ver-body::before { border-color: var(--gold); }
 }
 .tabs button { transition: color 0.12s; }
-.log-tools { padding: 1rem; margin-top: 1.25rem; border: 1px solid var(--line-soft); border-radius: var(--r); background: rgba(27, 30, 36, 0.5); }
+.log-tools { padding: 1rem; margin-top: 1.25rem; border: 1px solid var(--line-soft); border-radius: var(--r); background: var(--raised); border-color: var(--line); }
 
 /* ---------- report ---------- */
 .ideaonly { display: grid; gap: 1rem; }
 .num { background: var(--sunk); box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4); }
-.step > legend .num { color: var(--ready); border-color: rgba(102, 199, 119, 0.45); }
-.seg span, .addon-pick span { background: linear-gradient(rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)); transition: border-color 0.12s, color 0.12s; }
-.done-tick { filter: drop-shadow(0 0 10px rgba(102, 199, 119, 0.35)); }
+.step > legend .num { color: var(--gold); border-color: var(--gold); }
+.seg span, .addon-pick span { background: var(--btn); transition: border-color 0.12s, color 0.12s; }
+.done-tick { filter: none; }
 
 /* ---------- help ---------- */
 .help article, .cmds > div { border: 1px solid var(--line-soft); border-radius: var(--r); padding: 1.25rem 1.4rem; }
 .help-grid, .cmds { gap: 1.25rem; }
-.cmds dt code { color: var(--ready); border-color: rgba(102, 199, 119, 0.25); }
-.cmd code { color: var(--ready); border-color: rgba(102, 199, 119, 0.25); }
+.cmds dt code { color: var(--gold); border-color: var(--line); }
+.cmd code { color: var(--gold); border-color: var(--line); }
 .games td.yes::before { content: ""; display: inline-block; width: 0.5em; height: 0.5em; border-radius: 50%; background: var(--ready); margin-right: 0.45em; vertical-align: 0.08em; }
 
 /* ---------- footer ---------- */
-.foot { background: linear-gradient(var(--sunk), #15171c); }
+.foot { background: var(--sunk); border-top: 1px solid var(--line); }
 
 @media (max-width: 60rem) {
   .hero-top { grid-template-columns: minmax(0, 1fr); }
@@ -442,4 +447,114 @@ select:focus, input:focus, textarea:focus { border-color: var(--ready); outline:
   .cell { height: 13px; }
   .log-tools { padding: 0.8rem; }
   .roster-foot { padding: 0.8rem 1rem; }
+}
+
+
+/* =====================================================================
+   THE ADDONS' LOOK, where a token alone does not say it:
+   flat buttons that take a gold edge under the mouse, a green ring on
+   what is selected, square corners.
+   ===================================================================== */
+/* titles are white; the accent is on the second word of the name only, as on the addons' own window */
+.brand, .brand:hover { color: #ffffff; }
+.brand b { font-weight: 400; color: var(--gold); }
+.nav a { color: var(--bone); }
+.nav a:hover { color: var(--gold); }
+.nav a[aria-current="page"] { color: var(--ready); border-bottom-color: var(--sel-line); }
+
+/* a panel's title bar */
+.roster-head { background: var(--head); border-bottom: 1px solid var(--line); }
+.roster-state { color: var(--bone-dim); }
+.r-row + .r-row { border-top-color: var(--line); }
+.roster-foot { border-top-color: var(--line); background: var(--sunk); }
+
+/* buttons */
+.btn { color: var(--bone); border-color: var(--line); }
+.btn:hover { color: var(--bone); background: var(--btn-hover); border-color: var(--gold); }
+.btn-go, .btn-go:hover { color: var(--ready-ink); border-color: var(--line); }
+.top-report[aria-current="page"] { background: var(--ready-wash); color: var(--bone); border-color: var(--sel-line); }
+.link:hover, a:hover { color: var(--gold); }
+
+/* fields */
+select, input[type="text"], input[type="search"], textarea { background: var(--field); border-color: var(--line); }
+select:hover, input:hover, textarea:hover { border-color: var(--bone-faint); }
+code { background: var(--sunk); border-color: var(--line); }
+
+/* what is selected: the green ring and fill */
+.tabs { border-bottom-color: var(--line); }
+.tabs button[aria-pressed="true"] { color: var(--ready); border-bottom-color: var(--sel-line); }
+.chips button, .g { border-radius: var(--r); }
+.chips button { background: var(--btn); border-color: var(--line); color: var(--bone); }
+.chips button:hover { background: var(--btn-hover); color: var(--bone); border-color: var(--gold); }
+.chips button[aria-pressed="true"] { color: var(--bone); border-color: var(--sel-line); background: var(--ready-wash); }
+.seg span, .addon-pick span { border-color: var(--line); color: var(--bone); }
+.seg label:hover span, .addon-pick label:hover span { color: var(--bone); background: var(--btn-hover); border-color: var(--gold); }
+.seg input:checked + span, .addon-pick input:checked + span { color: var(--bone); border-color: var(--sel-line); background: var(--ready-wash); }
+.g { border-color: var(--line); background: var(--sunk); color: var(--bone-dim); }
+
+/* ready, away */
+.r-tick { border-color: var(--bone-faint); background: var(--sunk); }
+.r-row[data-state="ready"] .r-tick { border-color: var(--sel-line); color: var(--ready); background: var(--ready-wash); }
+.r-row[data-state="away"] .r-tick { border-color: var(--bad); color: var(--bad); }
+.glyph { border-color: var(--line); }
+.glyph .hl { stroke: var(--gold); }
+.glyph .hlf { fill: var(--gold); }
+.r-row:hover .glyph { border-color: var(--gold); }
+.since-sum strong { color: var(--gold); }
+.tag-new { background: var(--gold-wash); color: var(--gold); }
+.sec-added h3 { color: var(--ready); background: var(--ready-wash); }
+.sec-changed h3 { color: var(--gold); background: var(--gold-wash); }
+.sec li::before { background: var(--bone-faint); }
+.tips li::before { background: var(--gold); }
+.games td.yes { color: var(--ready); }
+.games th, .games td { border-bottom-color: var(--line-soft); }
+
+/* panels and lines */
+.side-card, .help article, .cmds > div, .known-list li, .log-tools, .raid, .done { border-color: var(--line); }
+.since, .known, .reach { border-top-color: var(--line-soft); }
+.ver-body { border-left-color: var(--bone-faint); }
+.ver-body::before { background: var(--ground); }
+.ver.is-target .ver-n { color: var(--gold); }
+.ver.is-target .ver-body::before { border-color: var(--gold); }
+#side-fixed { border-left: 3px solid var(--fixed); }
+#side-known, .known-list li { border-left: 3px solid var(--rust); }
+.note { border-color: var(--line); border-left: 3px solid var(--fixed); }
+.note-warn { border-left-color: var(--rust); }
+.err { color: var(--bad); }
+.done { border-color: var(--sel-line); }
+.done-tick { color: var(--ready); }
+.toast { background: var(--gold); color: var(--ready-ink); }
+html { scrollbar-color: rgba(255, 255, 255, 0.27) #141414; }
+
+
+/* =====================================================================
+   THE ADDONS' OWN ICONS (assets/icons: the files the addons ship, as PNG).
+   ZacUI's Z, Readycheck's check mark, DefaultFrames' frames; the check is
+   also the tick wherever something is ready or sent.
+   ===================================================================== */
+img.mark { width: 1.75rem; height: 1.75rem; display: block; }
+.aicon { display: grid; place-items: center; width: 3.5rem; height: 3.5rem; background: var(--sunk); border: 1px solid var(--line); border-radius: var(--r); }
+.aicon img { display: block; width: 2.75rem; height: 2.75rem; object-fit: contain; }
+.r-who > .aicon { grid-column: 1; grid-row: 1 / span 3; }
+.r-row:hover .aicon { border-color: var(--gold); }
+.aicon-s { display: inline-grid; width: 1.25rem; height: 1.25rem; background: none; border: 0; vertical-align: -0.22em; margin-right: 0.45em; }
+.aicon-s img { width: 1.25rem; height: 1.25rem; }
+.tabs button .aicon-s { vertical-align: -0.12em; }
+.seg span, .addon-pick span { display: flex; align-items: center; }
+
+.r-tick img.r-check { width: 1.5rem; height: 1.5rem; display: block; opacity: 0; transform: scale(1.6); }
+.r-row[data-state="ready"] .r-tick img.r-check { opacity: 1; transform: none; transition: opacity 0.25s ease-out, transform 0.25s ease-out; }
+.r-dash { display: block; width: 0.9rem; height: 3px; border-radius: 1px; background: currentColor; }
+img.done-tick { width: 3rem; height: 3rem; display: block; }
+
+/* a raider who has answered: the addons' white check on the bar */
+.cell[data-s="ready"]::after {
+  background: url("icons/check-white.png") center / contain no-repeat;
+  -webkit-mask: none; mask: none;
+  width: 11px; height: 11px; margin-top: -5.5px; right: 2px;
+}
+@media (max-width: 40rem) {
+  .aicon { width: 2.75rem; height: 2.75rem; }
+  .aicon img { width: 2.1rem; height: 2.1rem; }
+  .r-who > .aicon { grid-row: 1 / span 2; }
 }

@@ -19,13 +19,13 @@
   var TYPES = ["added", "changed", "fixed", "removed", "notes"];
   var TYPE_NAME = { added: "Added", changed: "Changed", fixed: "Fixed", removed: "Removed", notes: "Changes" };
   var KIND = {
-    bug: { name: "Something is broken", send: "Send report", legend: "What happened?", color: 0xD9785A,
+    bug: { name: "Something is broken", send: "Send report", legend: "What happened?", color: 0xFF9933,
       page: "Report a problem", intro: "Two minutes, no account. The more exactly you say what happened, the faster it gets fixed.", done: "Report sent",
       hint: "What you saw, in your own words. For example: the second trinket icon stays grey after I use the trinket." },
-    idea: { name: "An idea", send: "Send suggestion", legend: "What is the idea?", color: 0x66C777,
+    idea: { name: "An idea", send: "Send suggestion", legend: "What is the idea?", color: 0x599E59,
       page: "Suggest a feature", intro: "Something missing, or something that could work better? Say it in your own words. Every one gets read.", done: "Suggestion sent",
       hint: "What you would like the addon to do. For example: a sound when Windfury gives me extra attacks." },
-    question: { name: "A question", send: "Send question", legend: "What do you want to know?", color: 0x77B2EE,
+    question: { name: "A question", send: "Send question", legend: "What do you want to know?", color: 0x66B3FF,
       page: "Ask a question", intro: "Not sure how something works, or whether it can? Ask. Leave your Discord name so the answer can reach you.", done: "Question sent",
       hint: "Ask away. Leave your Discord name below so the answer can reach you." }
   };
@@ -115,7 +115,7 @@
   var VERS = {}, LIVE = {}, KNOWN = null, IDEAS = null;
   ADDONS.forEach(function (a) {
     VERS[a.id] = ((SNAP.addons[a.id] || {}).versions || []).slice();
-    LIVE[a.id] = { state: "wait", zip: {}, page: {} };
+    LIVE[a.id] = { state: "wait", zip: {}, exe: {}, page: {} };
   });
   function newest(id) { return VERS[id][0] || { v: "?", d: "", title: "", s: [] }; }
   function titleFor(v, game) { return (game && v.titles && v.titles[game]) || v.title || ""; }
@@ -126,9 +126,21 @@
   //   "# Name 1.2.3: Title" / "## Added" / "- line" / "  * sub line"
   function parseRelease(rel) {
     var v = { v: String(rel.tag || "").replace(/^v/i, ""), d: rel.date || "", title: "", s: [] };
-    var sec = null, item = null;
-    String(rel.body || "").replace(/\r/g, "").split("\n").forEach(function (raw) {
+    var sec = null, item = null, loose = [];
+    // (WowTiler's notes are written by hand: bold lines for headings, "- - " bullets, and the
+    //  app's description under a "---" rule, which is not part of what changed)
+    function plain(t) { return t.replace(/\*\*(.+?)\*\*/g, "$1").replace(/(^|\s)\*(\S.*?)\*(?=\s|[.,:;)]|$)/g, "$1$2").replace(/`([^`]+)`/g, "$1").trim(); }
+    var text = String(rel.body || "").replace(/\r/g, "").split(/\n-{3,}\s*\n/)[0];
+    text.split("\n").forEach(function (raw) {
       var m;
+      raw = raw.replace(/^-\s+-\s+/, "- ");
+      if ((m = /^\*\*([^*]+)\*\*\s*$/.exec(raw))) {
+        var kind = /fix/i.test(m[1]) ? "fixed" : /new|added/i.test(m[1]) ? "added" : "notes";
+        // "New in 1.6 - a third monitor": what follows the dash is the release's title
+        var tm = /\s[-:]\s+(.+)$/.exec(m[1]);
+        if (tm && !v.title) v.title = tm[1].charAt(0).toUpperCase() + tm[1].slice(1);
+        sec = { type: kind, items: [] }; v.s.push(sec); item = null; return;
+      }
       if ((m = /^#\s+(.*)$/.exec(raw))) { var c = m[1].indexOf(": "); v.title = c === -1 ? "" : m[1].slice(c + 2).trim(); return; }
       if ((m = /^#{2,3}\s+(.*)$/.exec(raw))) {
         var t = m[1].trim().toLowerCase(); if (TYPES.indexOf(t) === -1) t = "notes";
@@ -136,12 +148,15 @@
       }
       if ((m = /^[-*]\s+(.*)$/.exec(raw))) {
         if (!sec) { sec = { type: "notes", items: [] }; v.s.push(sec); }
-        item = { t: m[1].trim() }; sec.items.push(item); return;
+        item = { t: plain(m[1]) }; sec.items.push(item); return;
       }
-      if (item && (m = /^\s+[-*]\s+(.*)$/.exec(raw))) { (item.sub = item.sub || []).push(m[1].trim()); return; }
-      if (item && /^\s+\S/.test(raw)) { if (item.sub) item.sub[item.sub.length - 1] += " " + raw.trim(); else item.t += " " + raw.trim(); }
+      if (item && (m = /^\s+[-*]\s+(.*)$/.exec(raw))) { (item.sub = item.sub || []).push(plain(m[1])); return; }
+      if (item && /^\s+\S/.test(raw)) { if (item.sub) item.sub[item.sub.length - 1] += " " + plain(raw); else item.t += " " + plain(raw); return; }
+      if (raw.trim() && !/^\s*\*\*Download/i.test(raw) && !/will offer this update/i.test(raw)) loose.push(plain(raw));
     });
     v.s = v.s.filter(function (s) { return s.items.length; });
+    // notes with no list at all: each paragraph is a line
+    if (!v.s.length && loose.length) v.s.push({ type: "notes", items: loose.map(function (t) { return { t: t }; }) });
     return v;
   }
 
@@ -164,7 +179,8 @@
     return cached("rel." + a.id, url, function (list) {
       return (Array.isArray(list) ? list : []).filter(function (r) { return !r.draft && !r.prerelease; }).map(function (r) {
         var zip = (r.assets || []).filter(function (x) { return /\.zip$/i.test(x.name); })[0];
-        return { tag: r.tag_name, date: r.published_at, body: r.body, page: r.html_url, zip: zip ? zip.browser_download_url : "" };
+        var exe = (r.assets || []).filter(function (x) { return /\.exe$/i.test(x.name); })[0];
+        return { tag: r.tag_name, date: r.published_at, body: r.body, page: r.html_url, zip: zip ? zip.browser_download_url : "", exe: exe ? exe.browser_download_url : "" };
       });
     }).then(function (res) {
       var have = {}; VERS[a.id].forEach(function (v) { have[v.v] = v; });
@@ -172,6 +188,7 @@
       res.data.forEach(function (rel) {
         var v = String(rel.tag || "").replace(/^v/i, ""); if (!v) return;
         if (rel.zip) LIVE[a.id].zip[v] = rel.zip;
+        if (rel.exe) LIVE[a.id].exe[v] = rel.exe;
         LIVE[a.id].page[v] = rel.page;
         if (have[v]) { if (!have[v].d && rel.date) have[v].d = rel.date; return; }
         if (cmp(v, snapTop) > 0) { var p = parseRelease(rel); if (p.s.length) { VERS[a.id].push(p); have[v] = p; } }
@@ -223,16 +240,10 @@
   }
 
   // ------------------------------------------------------------------ home
-  // A small drawing of what each addon puts on the screen. Lines only; ".hl" is the part to notice.
-  var GLYPHS = {
-    zacui: '<rect x="1.5" y="1.5" width="61" height="41" rx="3"/><rect class="hl" x="8" y="24" width="15" height="5" rx="1"/><rect x="41" y="24" width="15" height="5" rx="1"/><circle cx="53" cy="11" r="5.5"/><path d="M26 20a6.5 6.5 0 0 1 12 0"/><rect x="19" y="33" width="4" height="4"/><rect x="24.5" y="33" width="4" height="4"/><rect x="30" y="33" width="4" height="4"/><rect x="35.500" y="33" width="4" height="4"/><rect x="41" y="33" width="4" height="4"/>',
-    readycheck: '<rect x="5" y="6" width="11" height="11" rx="1.5"/><rect x="19.500" y="6" width="11" height="11" rx="1.5"/><rect x="34" y="6" width="11" height="11" rx="1.5"/><rect x="48.500" y="6" width="11" height="11" rx="1.5"/><path class="hl" d="M7.500 11.500l2.300 2.300 4-4.600M22 11.500l2.300 2.300 4-4.600M36.500 11.500l2.300 2.300 4-4.600"/><path d="M54 9v4M54 15.200v.100"/><rect x="5" y="26" width="54.500" height="6" rx="1.500"/><rect class="hlf" x="6.500" y="27.500" width="33" height="3"/><path d="M5 38h22"/>',
-    defaultframes: '<rect x="6" y="4" width="22" height="5" rx="1"/><rect x="36" y="4" width="22" height="5" rx="1"/><path d="M6 14h22M6 20h22M6 26h22M6 32h22M6 38h22M36 14h22M36 20h22M36 26h22M36 32h22M36 38h22"/><path class="hl" d="M6 14h16M36 20h9M6 32h20"/>',
-    stacked: '<path class="hl" d="M5 6h10M5 10h10M5 14h10M20 6h10M20 10h10M20 14h10M35 6h10M35 10h10M35 14h10M50 6h10M50 10h10M50 14h10"/><path d="M5 27h10M5 31h10M5 35h10M20 27h10M20 31h10M20 35h10M35 27h10M35 31h10M35 35h10M50 27h10M50 31h10M50 35h10"/><path d="M3 21h58" stroke-dasharray="2 3"/>'
-  };
-  function glyph(id) {
-    var box = document.createElement("span"); box.className = "glyph"; box.setAttribute("aria-hidden", "true");
-    if (GLYPHS[id]) box.innerHTML = '<svg viewBox="0 0 64 44">' + GLYPHS[id] + "</svg>";   // our own fixed drawings, nothing typed by anyone
+  // Each addon's own icon, as it ships in the addon (data/addons.js names the file).
+  function glyph(id, small) {
+    var a = byId(id), box = el("i", { class: small ? "aicon aicon-s" : "aicon", "aria-hidden": "true" });   // (an <i>: the pickers style every <span> inside them)
+    if (a && a.icon) box.appendChild(el("img", { src: a.icon, alt: "", width: small ? 20 : 44, height: small ? 20 : 44, loading: "lazy" }));
     return box;
   }
 
@@ -274,10 +285,16 @@
     run();
   }
 
+  // the tick is the addons' own check mark; "away" is a plain dash
   function tickSvg(away) {
-    var ns = "http://www.w3.org/2000/svg", s = document.createElementNS(ns, "svg"), p = document.createElementNS(ns, "path");
-    s.setAttribute("viewBox", "0 0 24 24"); s.setAttribute("aria-hidden", "true");
-    p.setAttribute("d", away ? "M6 12h12" : "M5 12.5l4.5 4.5L19 7"); s.appendChild(p); return s;
+    if (away) return el("span", { class: "r-dash", "aria-hidden": "true" });
+    return el("img", { class: "r-check", src: "assets/icons/readycheck.png", alt: "", width: 22, height: 22 });
+  }
+  // where "get the newest" goes: CurseForge for an addon; for a program its newest GitHub release
+  function getLink(a) {
+    if (a.curse) return a.curse;
+    var v = newest(a.id).v, live = LIVE[a.id];
+    return live.exe[v] || live.zip[v] || "https://github.com/" + USER + "/" + a.repo + "/releases/latest";
   }
   function rosterRow(a) {
     var v = newest(a.id), live = LIVE[a.id], zip = live.zip[v.v];
@@ -288,7 +305,7 @@
         glyph(a.id),
         el("h3", { text: a.name }),
         el("p", { text: a.line }),
-        el("p", { class: "r-new" }, [gameChips(a.games)])
+        el("p", { class: "r-new" }, [a.games.length ? gameChips(a.games) : el("span", { class: "g", text: "Windows 10 and 11" })])
       ]),
       el("div", { class: "r-ver" }, [
         el("strong", { text: v.v }),
@@ -296,7 +313,9 @@
         el("span", { class: "vh", text: live.state === "ready" ? "checked with GitHub" : live.state === "away" ? "GitHub did not answer" : "checking" })
       ]),
       el("div", { class: "r-act" }, [
-        el("a", { class: "btn btn-go", href: a.curse, target: "_blank", rel: "noopener", text: "Get it on CurseForge" }),
+        a.curse ? el("a", { class: "btn btn-go", href: a.curse, target: "_blank", rel: "noopener", text: "Get it on CurseForge" })
+                : el("a", { class: "btn btn-go", href: getLink(a), target: live.exe[v.v] || zip ? null : "_blank", rel: "noopener", text: "Download",
+                    title: live.exe[v.v] ? a.name + " " + v.v + ", the program itself, from GitHub" : "The newest release on GitHub" }),
         zip ? el("a", { class: "btn", href: zip, text: "Zip", title: a.name + " " + v.v + " as a zip file from GitHub" })
             : el("a", { class: "btn", href: "https://github.com/" + USER + "/" + a.repo + "/releases/latest", target: "_blank", rel: "noopener", text: "Zip", title: "The newest release on GitHub" })
       ]),
@@ -326,7 +345,7 @@
     var txt = "Checking for new versions…";
     if (!waiting) {
       if (away === ADDONS.length) txt = "GitHub did not answer. These are the versions this page knew on " + niceDate(SNAP.generated) + ".";
-      else if (away) txt = plural(ADDONS.length - away, "addon") + " checked in. The rest show what this page knew on " + niceDate(SNAP.generated) + ".";
+      else if (away) txt = (ADDONS.length - away) + " of " + ADDONS.length + " checked in. The rest show what this page knew on " + niceDate(SNAP.generated) + ".";
       else {
         var top = ADDONS.map(function (a) { return { a: a, v: newest(a.id) }; }).sort(function (x, y) { return (toDate(y.v.d) || 0) - (toDate(x.v.d) || 0); })[0];
         txt = "All " + ADDONS.length + " checked in. Newest release: " + top.a.name + " " + top.v.v + ", " + ago(top.v.d) + ".";
@@ -348,6 +367,7 @@
   }
   function fillGameSelect(sel, id, chosen, anyText) {
     var a = byId(id), kids = [option("", anyText, !chosen)];
+    if (sel.parentNode && sel.parentNode.tagName === "LABEL") sel.parentNode.hidden = !a.games.length;   // a program has no game versions
     a.games.forEach(function (g) { kids.push(option(g, GAMES[g], chosen === g)); });
     fill(sel, kids);
   }
@@ -385,7 +405,7 @@
       " " + (total ? parts.join(", ") + (since.game ? " on " + GAMES[since.game] : "") + "." : "Nothing in them changes " + GAMES[since.game] + ".")
     ]);
     var get = el("div", { class: "since-get" }, [
-      el("a", { class: "btn btn-go", href: a.curse, target: "_blank", rel: "noopener", text: "Get " + a.name + " " + top.v }),
+      el("a", { class: "btn btn-go", href: getLink(a), target: "_blank", rel: "noopener", text: "Get " + a.name + " " + top.v }),
       el("a", { class: "btn", href: "#/changelog/" + a.id, text: "Read it version by version" })
     ]);
     var cols = el("div", { class: "since-cols" }, TYPES.filter(function (t) { return groups[t]; }).map(function (t) {
@@ -423,7 +443,7 @@
   function drawLogTabs() {
     fill($("log-tabs"), ADDONS.map(function (a) {
       return el("button", { type: "button", "aria-pressed": a.id === log.addon ? "true" : "false", onclick: function () { location.hash = "#/changelog/" + a.id; } },
-        [a.name, el("small", { text: newest(a.id).v })]);
+        [glyph(a.id, true), a.name, el("small", { text: newest(a.id).v })]);
     }));
   }
   function drawLogTools() {
@@ -504,7 +524,7 @@
   function drawAddonPick(chosen) {
     fill($("r-addon"), ADDONS.map(function (a) {
       var i = el("input", { type: "radio", name: "addon", value: a.id }); i.checked = a.id === chosen;
-      return el("label", null, [i, el("span", { text: a.name })]);
+      return el("label", null, [i, el("span", null, [glyph(a.id, true), a.name])]);
     }));
   }
   function onAddon(keepVersion, keepGame) {
@@ -512,7 +532,11 @@
     fillVersionSelect($("r-version"), a.id, keepVersion || "", true);
     fillGameSelect($("r-game"), a.id, keepGame || "", "Not sure");
     $("r-version-hint").textContent = "Where to find it: " + a.version;
-    $("r-error-hint").textContent = a.id === "stacked" ? "For this addon, what /srg status prints helps a lot. Paste it here too." : "Long errors are fine. The whole text is sent along as a file.";
+    $("r-error-hint").textContent = a.id === "stacked" ? "For this addon, what /srg status prints helps a lot. Paste it here too."
+      : a.kind === "app" ? "WowTiler writes WowTiler.log next to the exe. Paste what is in it here."
+      : "Long errors are fine. The whole text is sent along as a file.";
+    // a program is not in the game: no class, no raid, no other addons
+    Array.prototype.forEach.call(form.querySelectorAll(".gameonly"), function (n) { n.hidden = a.kind === "app"; });
     onVersion(); drawSideKnown();
   }
   function onKind() {
@@ -553,7 +577,7 @@
     if (b.n > 0) {
       fill(box, [
         el("p", null, [el("strong", { text: "You are " + plural(b.n, "version") + " behind." }), " " + a.name + " " + newest(a.id).v + " is the newest. Update first: there is a fair chance this is already fixed."]),
-        el("p", null, [el("a", { href: a.curse, target: "_blank", rel: "noopener", text: "Get " + a.name + " " + newest(a.id).v }), " or carry on and send the report anyway."])
+        el("p", null, [el("a", { href: getLink(a), target: "_blank", rel: "noopener", text: "Get " + a.name + " " + newest(a.id).v }), " or carry on and send the report anyway."])
       ]);
     }
     box.hidden = kind() !== "bug" || b.n === 0;
@@ -605,13 +629,13 @@
     return a.code + "-" + two(d.getFullYear() % 100) + two(d.getMonth() + 1) + two(d.getDate()) + "-" + r;
   }
   function gather() {
-    var a = byId(addonPick()), k = kind(), v = val("r-version"), g = val("r-game"), b = behind();
+    var a = byId(addonPick()), k = kind(), v = val("r-version"), g = val("r-game"), b = behind(), app = a.kind === "app";
     return {
       a: a, kind: k, version: v, versionText: v === "older" ? "(older than " + VERS[a.id][VERS[a.id].length - 1].v + ")" : (v || "(version not sure)"),
-      game: g, gameText: g ? GAMES[g] : "not sure", behind: v ? b.n : 0, newest: newest(a.id).v,
+      game: g, gameText: app ? "" : (g ? GAMES[g] : "not sure"), behind: v ? b.n : 0, newest: newest(a.id).v,
       what: val("r-what"), why: k === "idea" ? val("r-why") : "", steps: k === "bug" ? val("r-steps") : "", expected: k === "bug" ? val("r-expected") : "",
-      freq: k === "bug" ? val("r-freq") : "", where: k === "bug" ? val("r-where") : "", klass: k === "bug" ? val("r-class") : "",
-      combat: k === "bug" && $("r-combat").checked, error: k === "bug" ? val("r-error") : "", others: k === "bug" ? val("r-others") : "",
+      freq: k === "bug" ? val("r-freq") : "", where: k === "bug" && !app ? val("r-where") : "", klass: k === "bug" && !app ? val("r-class") : "",
+      combat: k === "bug" && !app && $("r-combat").checked, error: k === "bug" ? val("r-error") : "", others: k === "bug" && !app ? val("r-others") : "",
       contact: val("r-contact")
     };
   }
@@ -619,7 +643,7 @@
     var L = [];
     L.push((ref ? "Report " + ref + "\n" : "") + "Kind: " + KIND[r.kind].name);
     L.push("Addon: " + r.a.name + " " + r.versionText + (r.behind ? " (" + plural(r.behind, "version") + " behind, newest is " + r.newest + ")" : ""));
-    L.push("Game: " + r.gameText);
+    if (r.gameText) L.push("Game: " + r.gameText);
     var facts = [];
     if (r.freq) facts.push("How often: " + r.freq);
     if (r.where) facts.push("Where: " + r.where);
@@ -802,14 +826,14 @@
     var games = Object.keys(GAMES);
     fill($("help-games"), [
       el("thead", null, el("tr", null, [el("th", { text: "" })].concat(games.map(function (g) { return el("th", { scope: "col", text: GAMES[g] }); })))),
-      el("tbody", null, ADDONS.map(function (a) {
+      el("tbody", null, ADDONS.filter(function (a) { return a.games.length; }).map(function (a) {
         return el("tr", null, [el("th", { scope: "row", text: a.name })].concat(games.map(function (g) {
           var yes = a.games.indexOf(g) !== -1; return el("td", { class: yes ? "yes" : "no", text: yes ? "Yes" : "No" });
         })));
       }))
     ]);
     fill($("help-cmds"), ADDONS.map(function (a) {
-      return el("div", null, [el("h3", { text: a.name }), el("dl", null, a.commands.reduce(function (out, c) {
+      return el("div", null, [el("h3", { text: a.commandsTitle || a.name }), el("dl", null, a.commands.reduce(function (out, c) {
         out.push(el("dt", null, el("code", { text: c[0] })), el("dd", { text: c[1] })); return out;
       }, []))]);
     }));
@@ -827,14 +851,17 @@
   }
   function drawFoot() {
     var links = [el("a", { href: "https://github.com/" + USER, target: "_blank", rel: "noopener", text: "GitHub" })];
-    ADDONS.forEach(function (a) { links.push(el("a", { href: a.curse, target: "_blank", rel: "noopener", text: a.name + " on CurseForge" })); });
+    ADDONS.forEach(function (a) {
+      links.push(a.curse ? el("a", { href: a.curse, target: "_blank", rel: "noopener", text: a.name + " on CurseForge" })
+                         : el("a", { href: "https://github.com/" + USER + "/" + a.repo, target: "_blank", rel: "noopener", text: a.name + " on GitHub" }));
+    });
     if (CFG.twitch) links.push(el("a", { href: CFG.twitch, target: "_blank", rel: "noopener", text: "Twitch" }));
     if (CFG.discordInvite) links.push(el("a", { href: CFG.discordInvite, target: "_blank", rel: "noopener", text: "Discord" }));
     fill($("foot-links"), links);
   }
 
   // ------------------------------------------------------------------ pages
-  var VIEWS = { home: "Zac's addons for WoW Classic", changelog: "What changed", report: "Report a problem", suggest: "Suggest a feature", help: "Help" };
+  var VIEWS = { home: "Zac's addons for WoW", changelog: "What changed", report: "Report a problem", suggest: "Suggest a feature", help: "Help" };
   function markNav(name) {
     Array.prototype.forEach.call(document.querySelectorAll("[data-nav]"), function (a) {
       if (a.getAttribute("data-nav") === name) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
