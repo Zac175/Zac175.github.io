@@ -15,6 +15,10 @@ window.SITE_CONFIG = {
   // sends a test message before you save it here.
   reportWebhook: "",
 
+  // Want feature suggestions in a channel of their own? Paste that channel's
+  // webhook here. Leave empty and they go where reports go.
+  ideasWebhook: "",
+
   // Is that channel a FORUM channel? Then every report becomes its own post
   // (a thread you can answer, tag and close). true or false.
   reportsAreForumPosts: false,

@@ -4,8 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Zac's addons for WoW Classic</title>
-<meta name="description" content="ZacUI, Readycheck, DefaultFrames and Stacked Raid Groups: newest versions, what changed, and a quick way to report a problem.">
+<meta name="description" content="ZacUI, Readycheck, DefaultFrames and Stacked Raid Groups: newest versions, what changed, and a quick way to report a problem or suggest a feature.">
 <meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#1b1e24">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Zac's addons">
+<meta property="og:title" content="Zac's addons for WoW Classic">
+<meta property="og:description" content="ZacUI, Readycheck, DefaultFrames and Stacked Raid Groups: newest versions, what changed, bug reports and feature suggestions.">
+<meta property="og:image" content="https://zac175.github.io/assets/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preload" href="assets/fonts/alegreya-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/marcellus-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/site.css">
@@ -16,10 +25,11 @@
 
 <header class="top">
   <div class="wrap top-in">
-    <a class="brand" href="#/">Zac's addons</a>
+    <a class="brand" href="#/"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><path class="mark-d" d="M16 2.5 29.5 16 16 29.5 2.5 16Z"/><path class="mark-c" d="M10 16.5l4.2 4.2L22.5 11"/></svg>Zac's addons</a>
     <nav class="nav" aria-label="Pages">
       <a href="#/" data-nav="home">Addons</a>
       <a href="#/changelog" data-nav="changelog">What changed</a>
+      <a href="#/suggest" data-nav="suggest">Suggestions</a>
       <a href="#/help" data-nav="help">Help</a>
     </nav>
     <a class="btn btn-go top-report" href="#/report" data-nav="report">Report a problem</a>
@@ -31,9 +41,20 @@
   <!-- ============================ ADDONS (home) ============================ -->
   <section class="view" id="view-home" hidden>
     <div class="wrap hero">
-      <div class="hero-say">
-        <h1>Four addons for WoW Classic, and one person behind them.</h1>
-        <p class="lede">Get the newest version, see exactly what changed since yours, or tell me what broke.<span id="lede-discord" hidden> Reports land straight in my Discord.</span></p>
+      <div class="hero-top">
+        <div class="hero-say">
+          <h1>Four addons for WoW Classic, and one person behind them.</h1>
+          <p class="lede">Get the newest version, see exactly what changed since yours, tell me what broke, or tell me what is missing.<span id="lede-discord" hidden> Reports and ideas land straight in my Discord.</span></p>
+          <div class="hero-act">
+            <a class="btn btn-go" href="#/report">Report a problem</a>
+            <a class="btn" href="#/suggest">Suggest a feature</a>
+            <a class="btn" href="#/changelog">See what changed</a>
+          </div>
+        </div>
+        <figure class="raid" id="raid" role="img" aria-label="A 40-player raid answering a ready check, one player at a time.">
+          <div class="raid-grid" id="raid-grid" aria-hidden="true"></div>
+          <figcaption><span id="raid-count">Ready check</span> <button type="button" class="link" id="raid-again" hidden>Run it again</button></figcaption>
+        </figure>
       </div>
 
       <div class="roster" aria-labelledby="roster-h">
@@ -42,6 +63,7 @@
           <p class="roster-state" id="roster-state" aria-live="polite">Checking for new versions…</p>
         </div>
         <ol class="roster-list" id="roster-list"></ol>
+        <p class="roster-foot" id="roster-foot"></p>
       </div>
     </div>
 
@@ -85,7 +107,7 @@
   <section class="view" id="view-report" hidden>
     <div class="wrap report">
       <div class="report-main">
-        <h1 class="page-h">Report a problem</h1>
+        <h1 class="page-h" id="report-h">Report a problem</h1>
         <p class="sub" id="report-intro">Two minutes, no account. The more exactly you say what happened, the faster it gets fixed.</p>
 
         <form id="report-form" novalidate>
@@ -111,6 +133,11 @@
               <textarea id="r-what" name="what" rows="5" maxlength="3000" required placeholder="What you saw, in your own words. For example: the second trinket icon stays grey after I use the trinket."></textarea>
             </label>
             <p class="err" id="r-what-err" hidden>Say what happened in a sentence or two, so there is something to go on.</p>
+            <div class="ideaonly">
+              <label class="block"><span>What would you use it for? <em>optional</em></span>
+                <textarea id="r-why" name="why" rows="3" maxlength="2000" placeholder="The moment in the game where you wanted it. That says more than the feature's name."></textarea>
+              </label>
+            </div>
             <div class="bugonly">
               <label class="block"><span>What did you do just before? <em>optional</em></span>
                 <textarea id="r-steps" name="steps" rows="3" maxlength="2000" placeholder="Step by step if you can. 1. Join a raid. 2. Open the bags. 3. …"></textarea>
@@ -118,6 +145,12 @@
               <label class="block"><span>What did you expect instead? <em>optional</em></span>
                 <input type="text" id="r-expected" name="expected" maxlength="400">
               </label>
+            </div>
+            <div class="shot">
+              <label class="btn btn-quiet" for="r-shot">Add a screenshot</label>
+              <input class="vh" type="file" id="r-shot" accept="image/png,image/jpeg,image/webp">
+              <span class="shot-name" id="r-shot-name">None added</span>
+              <button type="button" class="link" id="r-shot-clear" hidden>Remove</button>
             </div>
           </fieldset>
 
@@ -161,12 +194,6 @@
               <input type="text" id="r-others" name="others" maxlength="300" placeholder="For example: ElvUI, WeakAuras, DBM">
             </label>
 
-            <div class="shot">
-              <label class="btn btn-quiet" for="r-shot">Add a screenshot</label>
-              <input class="vh" type="file" id="r-shot" accept="image/png,image/jpeg,image/webp">
-              <span class="shot-name" id="r-shot-name">None added</span>
-              <button type="button" class="link" id="r-shot-clear" hidden>Remove</button>
-            </div>
           </fieldset>
 
           <fieldset class="step">
@@ -209,7 +236,20 @@
           <h2>Known problems</h2>
           <ul id="side-known-list"></ul>
         </div>
-        <div class="side-card">
+        <div class="side-card" id="side-ideas" hidden>
+          <h2>Already on the list</h2>
+          <p class="sub">Ideas that are being looked at.</p>
+          <ul id="side-ideas-list"></ul>
+        </div>
+        <div class="side-card ideaside" hidden>
+          <h2>What makes a suggestion land</h2>
+          <ul class="tips">
+            <li>Say what you are trying to do. There may already be a way, or a better one than the feature you pictured.</li>
+            <li>One idea per message. Send as many messages as you like.</li>
+            <li>A screenshot of another addon doing it is worth a paragraph.</li>
+          </ul>
+        </div>
+        <div class="side-card bugside">
           <h2>What makes a report useful</h2>
           <ul class="tips">
             <li>What you did, what you saw, what you expected.</li>

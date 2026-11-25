@@ -20,10 +20,13 @@
   var TYPE_NAME = { added: "Added", changed: "Changed", fixed: "Fixed", removed: "Removed", notes: "Changes" };
   var KIND = {
     bug: { name: "Something is broken", send: "Send report", legend: "What happened?", color: 0xD9785A,
+      page: "Report a problem", intro: "Two minutes, no account. The more exactly you say what happened, the faster it gets fixed.", done: "Report sent",
       hint: "What you saw, in your own words. For example: the second trinket icon stays grey after I use the trinket." },
-    idea: { name: "An idea", send: "Send idea", legend: "What is the idea?", color: 0x66C777,
-      hint: "What you would like, and what you would use it for." },
+    idea: { name: "An idea", send: "Send suggestion", legend: "What is the idea?", color: 0x66C777,
+      page: "Suggest a feature", intro: "Something missing, or something that could work better? Say it in your own words. Every one gets read.", done: "Suggestion sent",
+      hint: "What you would like the addon to do. For example: a sound when Windfury gives me extra attacks." },
     question: { name: "A question", send: "Send question", legend: "What do you want to know?", color: 0x77B2EE,
+      page: "Ask a question", intro: "Not sure how something works, or whether it can? Ask. Leave your Discord name so the answer can reach you.", done: "Question sent",
       hint: "Ask away. Leave your Discord name below so the answer can reach you." }
   };
   var CACHE_MS = 15 * 60 * 1000;
@@ -109,7 +112,7 @@
 
   // ------------------------------------------------------------------ the version history
   // VERS[id] = newest first; starts as the built-in history, newer GitHub releases are added on top.
-  var VERS = {}, LIVE = {}, KNOWN = null;
+  var VERS = {}, LIVE = {}, KNOWN = null, IDEAS = null;
   ADDONS.forEach(function (a) {
     VERS[a.id] = ((SNAP.addons[a.id] || {}).versions || []).slice();
     LIVE[a.id] = { state: "wait", zip: {}, page: {} };
@@ -187,17 +190,24 @@
       });
     }
     var base = "https://api.github.com/search/issues?per_page=30&q=" + encodeURIComponent("user:" + USER + " is:issue is:open ");
-    return Promise.all([
-      cached("known.own", base + encodeURIComponent("author:" + USER), trim),
-      cached("known.label", base + encodeURIComponent("label:known"), trim)
-    ]).then(function (both) {
-      var seen = {}, out = [];
-      both.forEach(function (res) { res.data.forEach(function (i) {
-        var id = repos[i.repo.toLowerCase()]; if (!id || seen[i.url]) return;
-        seen[i.url] = 1; out.push({ addon: id, title: i.title, url: i.url, at: i.at });
-      }); });
-      KNOWN = out;
-    }, function () { KNOWN = []; });
+    function mine(res, seen, out) { res.data.forEach(function (i) {
+      var id = repos[i.repo.toLowerCase()]; if (!id || seen[i.url]) return;
+      seen[i.url] = 1; out.push({ addon: id, title: i.title, url: i.url, at: i.at });
+    }); }
+    // an issue labelled "idea" is a suggestion on the list, not a problem
+    return cached("ideas", base + encodeURIComponent("label:idea"), trim).then(function (res) {
+      var seen = {}; IDEAS = []; mine(res, seen, IDEAS); return seen;
+    }, function () { IDEAS = []; return {}; }).then(function (ideaUrls) {
+      return Promise.all([
+        cached("known.own", base + encodeURIComponent("author:" + USER), trim),
+        cached("known.label", base + encodeURIComponent("label:known"), trim)
+      ]).then(function (both) {
+        var seen = {}, out = [];
+        Object.keys(ideaUrls).forEach(function (u) { seen[u] = 1; });
+        both.forEach(function (res) { mine(res, seen, out); });
+        KNOWN = out;
+      }, function () { KNOWN = []; });
+    });
   }
 
   // ------------------------------------------------------------------ rendering the history
@@ -213,6 +223,57 @@
   }
 
   // ------------------------------------------------------------------ home
+  // A small drawing of what each addon puts on the screen. Lines only; ".hl" is the part to notice.
+  var GLYPHS = {
+    zacui: '<rect x="1.5" y="1.5" width="61" height="41" rx="3"/><rect class="hl" x="8" y="24" width="15" height="5" rx="1"/><rect x="41" y="24" width="15" height="5" rx="1"/><circle cx="53" cy="11" r="5.5"/><path d="M26 20a6.5 6.5 0 0 1 12 0"/><rect x="19" y="33" width="4" height="4"/><rect x="24.5" y="33" width="4" height="4"/><rect x="30" y="33" width="4" height="4"/><rect x="35.500" y="33" width="4" height="4"/><rect x="41" y="33" width="4" height="4"/>',
+    readycheck: '<rect x="5" y="6" width="11" height="11" rx="1.5"/><rect x="19.500" y="6" width="11" height="11" rx="1.5"/><rect x="34" y="6" width="11" height="11" rx="1.5"/><rect x="48.500" y="6" width="11" height="11" rx="1.5"/><path class="hl" d="M7.500 11.500l2.300 2.300 4-4.600M22 11.500l2.300 2.300 4-4.600M36.500 11.500l2.300 2.300 4-4.600"/><path d="M54 9v4M54 15.200v.100"/><rect x="5" y="26" width="54.500" height="6" rx="1.500"/><rect class="hlf" x="6.500" y="27.500" width="33" height="3"/><path d="M5 38h22"/>',
+    defaultframes: '<rect x="6" y="4" width="22" height="5" rx="1"/><rect x="36" y="4" width="22" height="5" rx="1"/><path d="M6 14h22M6 20h22M6 26h22M6 32h22M6 38h22M36 14h22M36 20h22M36 26h22M36 32h22M36 38h22"/><path class="hl" d="M6 14h16M36 20h9M6 32h20"/>',
+    stacked: '<path class="hl" d="M5 6h10M5 10h10M5 14h10M20 6h10M20 10h10M20 14h10M35 6h10M35 10h10M35 14h10M50 6h10M50 10h10M50 14h10"/><path d="M5 27h10M5 31h10M5 35h10M20 27h10M20 31h10M20 35h10M35 27h10M35 31h10M35 35h10M50 27h10M50 31h10M50 35h10"/><path d="M3 21h58" stroke-dasharray="2 3"/>'
+  };
+  function glyph(id) {
+    var box = document.createElement("span"); box.className = "glyph"; box.setAttribute("aria-hidden", "true");
+    if (GLYPHS[id]) box.innerHTML = '<svg viewBox="0 0 64 44">' + GLYPHS[id] + "</svg>";   // our own fixed drawings, nothing typed by anyone
+    return box;
+  }
+
+  // The picture beside the headline: forty raiders answering a ready check, eight groups of five in two rows.
+  // Bar colours are the classes' own. It plays once; "Run it again" plays it again.
+  var RAID = "WWWWW WWWRR RRRMM MMMMK KKKHH HPPPP PDDDS SSSSS".split(" ");
+  var CLASS = { W: "#C79C6E", R: "#FFF569", M: "#69CCF0", K: "#9482C9", H: "#ABD473", P: "#F0EDE4", D: "#FF7D0A", S: "#2F7DE0" };
+  var raidTimers = [];
+  function startRaid() {
+    var grid = $("raid-grid"); if (!grid) return;
+    var calm = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var cells = [], seed = 7;
+    function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+    fill(grid, RAID.map(function (g, gi) {
+      return el("div", { class: "grp" }, g.split("").map(function (c, ci) {
+        var hp = (gi * 5 + ci) % 7 === 3 ? 0.62 + rnd() * 0.3 : 1;
+        var cell = el("i", { class: "cell", style: "--c:" + CLASS[c] + ";--hp:" + hp.toFixed(2) });
+        cells.push(cell); return cell;
+      }));
+    }));
+    function run() {
+      raidTimers.forEach(clearTimeout); raidTimers = [];
+      var n = 0, count = $("raid-count"), again = $("raid-again");
+      again.hidden = true;
+      function say() { count.textContent = n < cells.length ? "Ready check: " + n + " of " + cells.length : "Ready check: all " + cells.length + " in."; }
+      cells.forEach(function (c) { c.removeAttribute("data-s"); });
+      if (calm) { cells.forEach(function (c) { c.setAttribute("data-s", "ready"); }); n = cells.length; say(); return; }
+      say();
+      var late = [11, 28];   // there are always two
+      cells.forEach(function (c, i) {
+        var at = late.indexOf(i) !== -1 ? 3300 + late.indexOf(i) * 700 : 450 + rnd() * 2100;
+        raidTimers.push(setTimeout(function () {
+          c.setAttribute("data-s", "ready"); n++; say();
+          if (n === cells.length) again.hidden = false;
+        }, at));
+      });
+    }
+    $("raid-again").addEventListener("click", run);
+    run();
+  }
+
   function tickSvg(away) {
     var ns = "http://www.w3.org/2000/svg", s = document.createElementNS(ns, "svg"), p = document.createElementNS(ns, "path");
     s.setAttribute("viewBox", "0 0 24 24"); s.setAttribute("aria-hidden", "true");
@@ -224,6 +285,7 @@
     return el("li", { class: "r-row", "data-state": live.state, "data-addon": a.id }, [
       el("span", { class: "r-tick" }, tickSvg(live.state === "away")),
       el("div", { class: "r-who" }, [
+        glyph(a.id),
         el("h3", { text: a.name }),
         el("p", { text: a.line }),
         el("p", { class: "r-new" }, [gameChips(a.games)])
@@ -241,7 +303,8 @@
       el("div", { class: "r-more" }, [
         title ? el("span", { class: "hint", text: "Newest: " + title }) : null,
         el("a", { href: "#/changelog/" + a.id, text: "What changed" }),
-        el("a", { href: "#/report?addon=" + a.id, text: "Report a problem" })
+        el("a", { href: "#/report?addon=" + a.id, text: "Report a problem" }),
+        el("a", { href: "#/suggest?addon=" + a.id, text: "Suggest a feature" })
       ])
     ]);
   }
@@ -270,6 +333,9 @@
       }
     }
     $("roster-state").textContent = txt;
+    var vs = 0, lines = 0;
+    ADDONS.forEach(function (a) { vs += VERS[a.id].length; lines += countItems(VERS[a.id]); });
+    $("roster-foot").textContent = plural(vs, "version") + " and " + plural(lines, "change") + " on record, every one of them searchable.";
   }
 
   function option(value, text, sel) { var o = el("option", { value: value, text: text }); if (sel) o.selected = true; return o; }
@@ -420,9 +486,16 @@
   }
 
   // ------------------------------------------------------------------ report
-  var form, shot = null, opened = Date.now(), webhook = String(CFG.reportWebhook || "").trim();
-  var isDiscord = /^https:\/\/(?:(?:canary|ptb)\.)?discord(?:app)?\.com\/api\/webhooks\/\d+\/[\w-]+/i.test(webhook);
-  var canSend = isDiscord || /^https:\/\/[^\s]+$/i.test(webhook);
+  var form, shot = null, opened = Date.now();
+  var DISCORD_HOOK = /^https:\/\/(?:(?:canary|ptb)\.)?discord(?:app)?\.com\/api\/webhooks\/\d+\/[\w-]+/i;
+  // where a report of this kind goes: suggestions may have a channel of their own
+  function hookFor(k) {
+    var ideas = String(CFG.ideasWebhook || "").trim(), main = String(CFG.reportWebhook || "").trim();
+    var url = k === "idea" && /^https:\/\/[^\s]+$/i.test(ideas) ? ideas : main;
+    return /^https:\/\/[^\s]+$/i.test(url) ? url : "";
+  }
+  function canSendKind(k) { return hookFor(k) !== ""; }
+  var canSend = canSendKind("bug") || canSendKind("idea");
 
   function val(id) { return ($(id).value || "").trim(); }
   function kind() { var r = form.querySelector('input[name="type"]:checked'); return r ? r.value : "bug"; }
@@ -445,11 +518,28 @@
   function onKind() {
     var k = kind(), K = KIND[k];
     Array.prototype.forEach.call(form.querySelectorAll(".bugonly"), function (n) { n.hidden = k !== "bug"; });
+    Array.prototype.forEach.call(form.querySelectorAll(".ideaonly"), function (n) { n.hidden = k !== "idea"; });
+    Array.prototype.forEach.call(document.querySelectorAll(".bugside"), function (n) { n.hidden = k === "idea"; });
+    Array.prototype.forEach.call(document.querySelectorAll(".ideaside"), function (n) { n.hidden = k !== "idea"; });
+    $("report-h").textContent = K.page;
+    if (!$("view-report").hidden) { document.title = K.page + " - Zac's addons"; markNav(k === "idea" ? "suggest" : "report"); }
+    sendMode();
     $("r-what-legend").textContent = K.legend; $("r-what").placeholder = K.hint;
     $("r-last-num").textContent = k === "bug" ? "4" : "3";
     $("r-send").textContent = K.send;
     $("r-old").hidden = k !== "bug" || !$("r-old").firstChild;
-    drawMatches();
+    drawMatches(); drawSideKnown();
+  }
+  // the buttons and the lines around them, for a kind that can or cannot be sent from here
+  function sendMode() {
+    var k = kind(), K = KIND[k], can = canSendKind(k), who = CFG.discordName || "Zac";
+    $("r-send").hidden = !can;
+    $("r-copy").className = can ? "btn btn-quiet" : "btn btn-go btn-big";
+    $("r-copy").textContent = k === "idea" ? "Copy the suggestion" : k === "question" ? "Copy the question" : "Copy the report text";
+    $("report-intro").textContent = can ? K.intro : K.intro.replace(/\s*Leave your Discord name.*$/, "") + " Fill it in, then copy the text and send it over.";
+    $("r-send-hint").textContent = can
+      ? "It goes straight to Zac's Discord. This site keeps nothing, and nothing else about you is sent."
+      : "Copy the text and send it to " + who + " on Discord, or open it on GitHub.";
   }
   function behind() {
     var a = byId(addonPick()), v = val("r-version"), list = VERS[a.id];
@@ -499,8 +589,13 @@
   function drawSideKnown() {
     if (!form) return;
     var mine = (KNOWN || []).filter(function (k) { return k.addon === addonPick(); });
-    $("side-known").hidden = !mine.length;
+    $("side-known").hidden = !mine.length || kind() === "idea";
     fill($("side-known-list"), mine.map(function (k) { return knownNode(k, false); }));
+    var ideas = (IDEAS || []).filter(function (k) { return k.addon === addonPick(); });
+    $("side-ideas").hidden = !ideas.length || kind() !== "idea";
+    fill($("side-ideas-list"), ideas.map(function (k) {
+      return el("li", null, [el("a", { href: k.url, target: "_blank", rel: "noopener", text: k.title }), el("small", { text: "added " + ago(k.at) })]);
+    }));
   }
 
   function makeRef(a) {
@@ -514,7 +609,7 @@
     return {
       a: a, kind: k, version: v, versionText: v === "older" ? "(older than " + VERS[a.id][VERS[a.id].length - 1].v + ")" : (v || "(version not sure)"),
       game: g, gameText: g ? GAMES[g] : "not sure", behind: v ? b.n : 0, newest: newest(a.id).v,
-      what: val("r-what"), steps: k === "bug" ? val("r-steps") : "", expected: k === "bug" ? val("r-expected") : "",
+      what: val("r-what"), why: k === "idea" ? val("r-why") : "", steps: k === "bug" ? val("r-steps") : "", expected: k === "bug" ? val("r-expected") : "",
       freq: k === "bug" ? val("r-freq") : "", where: k === "bug" ? val("r-where") : "", klass: k === "bug" ? val("r-class") : "",
       combat: k === "bug" && $("r-combat").checked, error: k === "bug" ? val("r-error") : "", others: k === "bug" ? val("r-others") : "",
       contact: val("r-contact")
@@ -532,6 +627,7 @@
     if (r.combat) facts.push("During a fight: yes");
     if (facts.length) L.push(facts.join("\n"));
     L.push("\n" + KIND[r.kind].legend + "\n" + r.what);
+    if (r.why) L.push("\nWhat I would use it for\n" + r.why);
     if (r.steps) L.push("\nWhat I did just before\n" + r.steps);
     if (r.expected) L.push("\nWhat I expected\n" + r.expected);
     if (r.error) L.push("\nError text\n" + r.error);
@@ -552,13 +648,14 @@
     add("Where", (r.where || "") + (r.combat ? (r.where ? ", " : "") + "during a fight" : ""), true);
     add("Class", r.klass, true);
     if (r.behind) add("Behind", plural(r.behind, "version") + " (newest " + r.newest + ")", true);
+    add("Would use it for", r.why);
     add("Did just before", r.steps);
     add("Expected", r.expected);
     if (r.error) add("Error text", "```\n" + cut(r.error.replace(/```/g, "'''"), 900) + "\n```");
     add("Other addons", r.others);
     add("Discord", r.contact, true);
     var embed = {
-      title: cut(r.a.name + " " + r.versionText + ": " + KIND[r.kind].name, 250),
+      title: cut(r.a.name + (r.kind !== "bug" && !r.version ? "" : " " + r.versionText) + ": " + KIND[r.kind].name, 250),
       description: cut(r.what, 1800),
       color: KIND[r.kind].color, fields: fields,
       footer: { text: ref }, timestamp: new Date().toISOString()
@@ -568,14 +665,14 @@
     var files = [{ id: 0, filename: ref + ".txt" }];
     if (shot) files.push({ id: 1, filename: shot.name });
     var body = { username: "Addon reports", content: ping ? "<@" + ping + ">" : "", allowed_mentions: { parse: [], users: ping ? [ping] : [] }, embeds: [embed], attachments: files };
-    if (CFG.reportsAreForumPosts) body.thread_name = cut("[" + r.a.code + (r.version && r.version !== "older" ? " " + r.version : "") + "] " + r.what.replace(/\s+/g, " "), 95);
+    if (CFG.reportsAreForumPosts) body.thread_name = cut("[" + r.a.code + (r.kind === "idea" ? " idea" : r.version && r.version !== "older" ? " " + r.version : "") + "] " + r.what.replace(/\s+/g, " "), 95);
     return body;
   }
 
   function result(kindOfNote, nodes) { var box = $("r-result"); box.className = "note" + (kindOfNote === "warn" ? " note-warn" : ""); fill(box, nodes); box.hidden = false; }
   function showDone(r, ref, sent) {
     $("report-form").hidden = true; $("report-intro").hidden = true;
-    $("done-h").textContent = r.kind === "bug" ? "Report sent" : r.kind === "idea" ? "Idea sent" : "Question sent";
+    $("done-h").textContent = KIND[r.kind].done;
     $("done-p").textContent = r.contact
       ? "It is in Zac's Discord now. If something is unclear he will message " + r.contact + " there."
       : "It is in Zac's Discord now. You left no Discord name, so he cannot ask you anything about it. To add something later, message " + (CFG.discordName || "Zac") + " on Discord with the reference below.";
@@ -590,7 +687,8 @@
     if (tooShort) { $("r-what").focus(); return; }
     var ref = makeRef(r.a);
     if (val("r-site")) { showDone(r, ref, false); return; }                      // a script filled the hidden field
-    if (!canSend) { copyText(reportText(r, ref), "Report copied"); return; }
+    var webhook = hookFor(r.kind), isDiscord = DISCORD_HOOK.test(webhook);
+    if (!webhook) { copyText(reportText(r, ref), "Copied"); return; }
     var recent = store.get("sent", []).filter(function (t) { return Date.now() - t < 10 * 60 * 1000; });
     if (recent.length >= 3) { result("warn", "That is three reports in ten minutes. Give it a few minutes, or put the rest into one report."); return; }
     if (Date.now() - opened < 4000) { result("warn", "That was quick. Read it over once and press send again."); opened = 0; return; }
@@ -640,7 +738,7 @@
   }
   function dropShot() { shot = null; $("r-shot").value = ""; $("r-shot-name").textContent = "None added"; $("r-shot-clear").hidden = true; }
 
-  var DRAFT = ["r-what", "r-steps", "r-expected", "r-freq", "r-where", "r-class", "r-error", "r-others", "r-contact"];
+  var DRAFT = ["r-what", "r-why", "r-steps", "r-expected", "r-freq", "r-where", "r-class", "r-error", "r-others", "r-contact"];
   var saveDraft = debounce(function () {
     var d = { type: kind(), addon: addonPick(), version: val("r-version"), game: val("r-game"), combat: $("r-combat").checked };
     DRAFT.forEach(function (id) { d[id] = $(id).value; });
@@ -670,30 +768,27 @@
     $("r-shot-clear").addEventListener("click", dropShot);
     form.addEventListener("paste", function (e) {
       var f = e.clipboardData && e.clipboardData.files && e.clipboardData.files[0];
-      if (f && /^image\//.test(f.type) && kind() === "bug") { e.preventDefault(); takeShot(f); toast("Screenshot added"); }
+      if (f && /^image\//.test(f.type)) { e.preventDefault(); takeShot(f); toast("Screenshot added"); }
     });
     $("r-copy").addEventListener("click", function () {
       var r = gather(); if (r.what.length < 12) { $("r-what-err").hidden = false; $("r-what").focus(); return; }
-      copyText(reportText(r, makeRef(r.a)), "Report copied");
+      copyText(reportText(r, makeRef(r.a)), "Copied");
     });
     $("done-again").addEventListener("click", function () {
-      $("report-done").hidden = true; form.hidden = false; $("report-intro").hidden = false; $("r-result").hidden = true;
-      ["r-what", "r-steps", "r-expected", "r-error"].forEach(function (id) { $(id).value = ""; });
+      $("report-done").hidden = true; form.hidden = false; $("report-intro").hidden = false; $("r-result").hidden = true; store.del("draft");
+      ["r-what", "r-why", "r-steps", "r-expected", "r-error"].forEach(function (id) { $(id).value = ""; });
       dropShot(); opened = Date.now(); drawMatches(); $("r-what").focus();
     });
 
     $("lede-discord").hidden = !canSend;
-    if (canSend) {
-      $("r-send-hint").textContent = "It goes straight to Zac's Discord. This site keeps nothing, and nothing else about you is sent.";
-    } else {
-      $("r-send").hidden = true; $("r-copy").className = "btn btn-go btn-big";
-      $("r-send-hint").textContent = "Copy the text and send it to " + (CFG.discordName || "Zac") + " on Discord, or open it on GitHub.";
-      $("report-intro").textContent = "Two minutes, no account. Fill it in, then copy the text and send it over.";
-    }
+    sendMode();
     $("r-issue").href = issueLink(gather());
   }
-  function openReport(q) {
+  function openReport(q, want) {
     $("report-done").hidden = true; form.hidden = false; $("report-intro").hidden = false; opened = Date.now();
+    if (KIND[q.type]) want = q.type;
+    if (want && want !== kind()) form.querySelector('input[name="type"][value="' + want + '"]').checked = true;
+    onKind();
     if (byId(q.addon)) {
       form.querySelector('input[name="addon"][value="' + q.addon + '"]').checked = true;
       var has = VERS[q.addon].some(function (v) { return v.v === q.v; });
@@ -739,17 +834,21 @@
   }
 
   // ------------------------------------------------------------------ pages
-  var VIEWS = { home: "Zac's addons for WoW Classic", changelog: "What changed", report: "Report a problem", help: "Help" };
+  var VIEWS = { home: "Zac's addons for WoW Classic", changelog: "What changed", report: "Report a problem", suggest: "Suggest a feature", help: "Help" };
+  function markNav(name) {
+    Array.prototype.forEach.call(document.querySelectorAll("[data-nav]"), function (a) {
+      if (a.getAttribute("data-nav") === name) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+    });
+  }
   var first = true;
   function route() {
     var h = location.hash.replace(/^#\/?/, ""), qi = h.indexOf("?");
     var path = (qi === -1 ? h : h.slice(0, qi)).split("/").filter(Boolean).map(decodeURIComponent), q = {};
     if (qi !== -1) h.slice(qi + 1).split("&").forEach(function (p) { var kv = p.split("="); try { q[decodeURIComponent(kv[0])] = decodeURIComponent(kv[1] || ""); } catch (e) { /* a broken link: ignore that part */ } });
     var view = VIEWS[path[0]] ? path[0] : "home";
-    Object.keys(VIEWS).forEach(function (v) { $("view-" + v).hidden = v !== view; });
-    Array.prototype.forEach.call(document.querySelectorAll("[data-nav]"), function (a) {
-      if (a.getAttribute("data-nav") === view) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
-    });
+    var shown = view === "suggest" ? "report" : view;   // one form, two doors
+    ["home", "changelog", "report", "help"].forEach(function (v) { $("view-" + v).hidden = v !== shown; });
+    markNav(view);
     document.title = view === "home" ? VIEWS.home : VIEWS[view] + " - Zac's addons";
     if (view === "changelog") {
       if (byId(path[1]) && path[1] !== log.addon) { log.addon = path[1]; log.all = false; log.types = {}; }
@@ -758,7 +857,7 @@
       store.set("log.addon", log.addon);
       drawLogTabs(); drawLogTools(); drawLog();
     }
-    if (view === "report") openReport(q);
+    if (shown === "report") openReport(q, view === "suggest" ? "idea" : "bug");
     if (!(view === "changelog" && log.target)) window.scrollTo(0, 0);
     if (!first) $("main").focus({ preventScroll: true });
     first = false;
@@ -790,6 +889,7 @@
       Promise.all([loadReleases(a), sleep(calm ? 0 : 350 + i * 260)]).then(refresh);
     });
     loadKnown().then(drawKnown);
+    startRaid();
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();

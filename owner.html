@@ -75,6 +75,8 @@
     <ol>
       <li><strong>New versions</strong> show up by themselves. The site reads each addon's releases from GitHub every time someone opens it.</li>
       <li><strong>Known problems</strong>: open an issue yourself in the addon's GitHub repository and it shows on the site. Someone else's issue shows once you give it the label <code>known</code>. Close the issue and it is gone.</li>
+      <li><strong>Suggestions on the list</strong>: give an issue the label <code>idea</code> and it shows on the Suggestions page under "Already on the list", so people can see it is being looked at.</li>
+      <li><strong>A channel of their own for suggestions</strong>: make a second webhook in that channel, test it above, and paste its address into <code>ideasWebhook</code> in <code>config.js</code>. Left empty, suggestions go where reports go.</li>
       <li><strong>Per-game tags</strong> (the small Classic Era / WoW Forever marks) come from the history built into the site. Ask Claude to "rebuild the site's changelog" after a release to refresh them.</li>
     </ol>
   </section>

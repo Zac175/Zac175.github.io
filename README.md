@@ -2,7 +2,7 @@
 
 The page players use to get the newest version of ZacUI, Readycheck,
 DefaultFrames and Stacked Raid Groups, see what changed since the version they
-have, and report a problem. Reports go to Discord.
+have, report a problem and suggest a feature. Reports go to Discord.
 
 Live at https://zac175.github.io/
 
@@ -21,6 +21,8 @@ about a minute later.
 - **Versions and what changed.** Read from each addon's GitHub releases every
   time someone opens the page. A release you push shows up without touching
   this repository.
+- **Suggestions on the list.** Any open issue with the label `idea` shows on
+  the Suggestions page.
 - **Known problems.** Open issues you wrote yourself in one of the four addon
   repositories, plus anyone's issue that carries the label `known`. Close the
   issue and it leaves the site.
@@ -37,7 +39,7 @@ page. Add an entry there and the addon appears on every page.
 
 ## Files
 
-    index.html            the four pages (Addons, What changed, Report, Help)
+    index.html            the pages (Addons, What changed, Report / Suggestions, Help)
     owner.html            webhook test and upkeep notes, for Zac
     config.js             the settings
     assets/site.css       the look
