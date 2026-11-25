@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zac's addons for WoW Classic</title>
+<meta name="description" content="ZacUI, Readycheck, DefaultFrames and Stacked Raid Groups: newest versions, what changed, and a quick way to report a problem.">
+<meta name="color-scheme" content="dark">
+<link rel="preload" href="assets/fonts/alegreya-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/marcellus-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/site.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231f232a'/%3E%3Cpath d='M8 17l5 5 11-13' fill='none' stroke='%2362c370' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the page</a>
+
+<header class="top">
+  <div class="wrap top-in">
+    <a class="brand" href="#/">Zac's addons</a>
+    <nav class="nav" aria-label="Pages">
+      <a href="#/" data-nav="home">Addons</a>
+      <a href="#/changelog" data-nav="changelog">What changed</a>
+      <a href="#/help" data-nav="help">Help</a>
+    </nav>
+    <a class="btn btn-go top-report" href="#/report" data-nav="report">Report a problem</a>
+  </div>
+</header>
+
+<main id="main" tabindex="-1">
+
+  <!-- ============================ ADDONS (home) ============================ -->
+  <section class="view" id="view-home" hidden>
+    <div class="wrap hero">
+      <div class="hero-say">
+        <h1>Four addons for WoW Classic, and one person behind them.</h1>
+        <p class="lede">Get the newest version, see exactly what changed since yours, or tell me what broke.<span id="lede-discord" hidden> Reports land straight in my Discord.</span></p>
+      </div>
+
+      <div class="roster" aria-labelledby="roster-h">
+        <div class="roster-head">
+          <h2 id="roster-h">Ready check</h2>
+          <p class="roster-state" id="roster-state" aria-live="polite">Checking for new versions…</p>
+        </div>
+        <ol class="roster-list" id="roster-list"></ol>
+      </div>
+    </div>
+
+    <div class="wrap since" aria-labelledby="since-h">
+      <h2 id="since-h">What changed since your version?</h2>
+      <p class="sub">Pick what you have installed. You get every change since then in one list, without the ones that are not for your game.</p>
+      <form class="since-form" id="since-form" onsubmit="return false">
+        <label><span>Addon</span><select id="since-addon"></select></label>
+        <label><span>Version you have</span><select id="since-version"></select></label>
+        <label><span>Game</span><select id="since-game"></select></label>
+      </form>
+      <div id="since-out" class="since-out" aria-live="polite"></div>
+    </div>
+
+    <div class="wrap known" id="known-wrap" hidden>
+      <h2>Known problems</h2>
+      <p class="sub">Already reported and being looked at. No need to send these again.</p>
+      <ul class="known-list" id="known-list"></ul>
+    </div>
+  </section>
+
+  <!-- ============================ WHAT CHANGED ============================ -->
+  <section class="view" id="view-changelog" hidden>
+    <div class="wrap">
+      <h1 class="page-h">What changed</h1>
+      <div class="tabs" id="log-tabs" role="group" aria-label="Addon"></div>
+
+      <div class="log-tools">
+        <label class="search"><span class="vh">Search the changes</span>
+          <input type="search" id="log-q" placeholder="Search the changes, like trinket or raid frames" autocomplete="off">
+        </label>
+        <label class="pick"><span>Game</span><select id="log-game"></select></label>
+        <div class="chips" id="log-types" role="group" aria-label="Kinds of change"></div>
+      </div>
+      <p class="log-count" id="log-count" aria-live="polite"></p>
+      <div class="log" id="log"></div>
+    </div>
+  </section>
+
+  <!-- ============================ REPORT ============================ -->
+  <section class="view" id="view-report" hidden>
+    <div class="wrap report">
+      <div class="report-main">
+        <h1 class="page-h">Report a problem</h1>
+        <p class="sub" id="report-intro">Two minutes, no account. The more exactly you say what happened, the faster it gets fixed.</p>
+
+        <form id="report-form" novalidate>
+          <fieldset class="step">
+            <legend><span class="num">1</span> What is it about?</legend>
+            <div class="seg" id="r-type" role="radiogroup" aria-label="Kind of report">
+              <label><input type="radio" name="type" value="bug" checked><span>Something is broken</span></label>
+              <label><input type="radio" name="type" value="idea"><span>An idea</span></label>
+              <label><input type="radio" name="type" value="question"><span>A question</span></label>
+            </div>
+            <div class="addon-pick" id="r-addon" role="radiogroup" aria-label="Addon"></div>
+            <div class="row2">
+              <label><span>Version you have</span><select id="r-version" name="version"></select></label>
+              <label><span>Game</span><select id="r-game" name="game"></select></label>
+            </div>
+            <p class="hint" id="r-version-hint"></p>
+            <div class="note note-warn" id="r-old" hidden></div>
+          </fieldset>
+
+          <fieldset class="step">
+            <legend><span class="num">2</span> <span id="r-what-legend">What happened?</span></legend>
+            <label class="block"><span class="vh">What happened</span>
+              <textarea id="r-what" name="what" rows="5" maxlength="3000" required placeholder="What you saw, in your own words. For example: the second trinket icon stays grey after I use the trinket."></textarea>
+            </label>
+            <p class="err" id="r-what-err" hidden>Say what happened in a sentence or two, so there is something to go on.</p>
+            <div class="bugonly">
+              <label class="block"><span>What did you do just before? <em>optional</em></span>
+                <textarea id="r-steps" name="steps" rows="3" maxlength="2000" placeholder="Step by step if you can. 1. Join a raid. 2. Open the bags. 3. …"></textarea>
+              </label>
+              <label class="block"><span>What did you expect instead? <em>optional</em></span>
+                <input type="text" id="r-expected" name="expected" maxlength="400">
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset class="step bugonly">
+            <legend><span class="num">3</span> A few details <em>all optional</em></legend>
+            <div class="row3">
+              <label><span>How often?</span>
+                <select id="r-freq" name="freq">
+                  <option value="">Not sure</option>
+                  <option>Every time</option>
+                  <option>Sometimes</option>
+                  <option>It happened once</option>
+                </select>
+              </label>
+              <label><span>Where were you?</span>
+                <select id="r-where" name="where">
+                  <option value="">Not sure</option>
+                  <option>Alone</option>
+                  <option>In a party</option>
+                  <option>In a raid</option>
+                  <option>In a battleground</option>
+                </select>
+              </label>
+              <label><span>Your class</span>
+                <select id="r-class" name="klass">
+                  <option value="">Not saying</option>
+                  <option>Warrior</option><option>Paladin</option><option>Hunter</option><option>Rogue</option>
+                  <option>Priest</option><option>Shaman</option><option>Mage</option><option>Warlock</option><option>Druid</option>
+                  <option>Another class</option>
+                </select>
+              </label>
+            </div>
+            <label class="check"><input type="checkbox" id="r-combat" name="combat"><span>It happened during a fight</span></label>
+
+            <label class="block"><span>Error text <em>if the game showed one</em></span>
+              <textarea id="r-error" name="error" rows="4" maxlength="12000" class="mono" spellcheck="false" placeholder="Paste the whole error here. How to get it is on the Help page."></textarea>
+            </label>
+            <p class="hint" id="r-error-hint"></p>
+
+            <label class="block"><span>Other addons that might matter</span>
+              <input type="text" id="r-others" name="others" maxlength="300" placeholder="For example: ElvUI, WeakAuras, DBM">
+            </label>
+
+            <div class="shot">
+              <label class="btn btn-quiet" for="r-shot">Add a screenshot</label>
+              <input class="vh" type="file" id="r-shot" accept="image/png,image/jpeg,image/webp">
+              <span class="shot-name" id="r-shot-name">None added</span>
+              <button type="button" class="link" id="r-shot-clear" hidden>Remove</button>
+            </div>
+          </fieldset>
+
+          <fieldset class="step">
+            <legend><span class="num" id="r-last-num">4</span> Can I ask you a question about it?</legend>
+            <label class="block"><span>Your Discord name <em>optional, only used to ask you about this report</em></span>
+              <input type="text" id="r-contact" name="contact" maxlength="60" autocomplete="off" placeholder="yourname">
+            </label>
+            <!-- left empty by people; filled by scripts that fill every field -->
+            <label class="trap" aria-hidden="true">Leave this empty <input type="text" id="r-site" name="website" tabindex="-1" autocomplete="off"></label>
+          </fieldset>
+
+          <div class="send">
+            <button type="submit" class="btn btn-go btn-big" id="r-send">Send report</button>
+            <button type="button" class="btn btn-quiet" id="r-copy">Copy the report text</button>
+            <a class="btn btn-quiet" id="r-issue" target="_blank" rel="noopener">Open it on GitHub instead</a>
+          </div>
+          <p class="hint" id="r-send-hint"></p>
+          <div class="note" id="r-result" role="status" aria-live="polite" hidden></div>
+        </form>
+
+        <div class="done" id="report-done" hidden tabindex="-1">
+          <svg class="done-tick" viewBox="0 0 48 48" aria-hidden="true"><path d="M10 25l9 9 19-22" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <h2 id="done-h">Report sent</h2>
+          <p id="done-p"></p>
+          <p class="ref">Your reference: <strong id="done-ref"></strong></p>
+          <div class="send">
+            <button type="button" class="btn btn-quiet" id="done-again">Report something else</button>
+            <a class="btn btn-quiet" href="#/changelog">See what changed lately</a>
+          </div>
+        </div>
+      </div>
+
+      <aside class="report-side" aria-label="While you write">
+        <div class="side-card" id="side-fixed" hidden>
+          <h2>This may already be fixed</h2>
+          <p class="sub" id="side-fixed-sub"></p>
+          <ul id="side-fixed-list"></ul>
+        </div>
+        <div class="side-card" id="side-known" hidden>
+          <h2>Known problems</h2>
+          <ul id="side-known-list"></ul>
+        </div>
+        <div class="side-card">
+          <h2>What makes a report useful</h2>
+          <ul class="tips">
+            <li>What you did, what you saw, what you expected.</li>
+            <li>The error text, if there was one. It names the exact line that failed.</li>
+            <li>A screenshot when it is about how something looks.</li>
+          </ul>
+          <p><a href="#/help">How to copy an error from the game</a></p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============================ HELP ============================ -->
+  <section class="view" id="view-help" hidden>
+    <div class="wrap help">
+      <h1 class="page-h">Help</h1>
+
+      <div class="help-grid">
+        <article>
+          <h2>Before you report</h2>
+          <ol class="steps">
+            <li><strong>Update.</strong> A lot gets fixed between versions. The newest ones are on the <a href="#/">Addons</a> page.</li>
+            <li><strong>Type /reload.</strong> If the problem is gone after that, say so in the report. It still helps.</li>
+            <li><strong>Try it again on purpose.</strong> If you can make it happen twice, write down what you did.</li>
+          </ol>
+        </article>
+
+        <article>
+          <h2>Copying an error from the game</h2>
+          <p>The game hides Lua errors unless you ask for them. Type this in chat once, then make the problem happen again:</p>
+          <p class="cmd"><code>/console scriptErrors 1</code> <button type="button" class="link" data-copy="/console scriptErrors 1">Copy</button></p>
+          <p>An error window comes up when something fails. Select all of its text, copy it, and paste it into the report. To switch the windows off again, type the same line with a 0.</p>
+          <p>If you use BugSack and BugGrabber, open BugSack from its minimap button and copy the error from there instead.</p>
+        </article>
+
+        <article>
+          <h2>Which version do I have?</h2>
+          <dl class="defs" id="help-versions"></dl>
+        </article>
+
+        <article>
+          <h2>Where each addon runs</h2>
+          <table class="games" id="help-games"></table>
+        </article>
+      </div>
+
+      <h2 class="cmd-h">Commands worth knowing</h2>
+      <div class="cmds" id="help-cmds"></div>
+
+      <div class="reach">
+        <h2>Talk to me</h2>
+        <p id="reach-p"></p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-in">
+    <p id="foot-links"></p>
+    <p class="fine">World of Warcraft is a trademark of Blizzard Entertainment. This site and these addons are not made or endorsed by Blizzard.</p>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="config.js"></script>
+<script src="data/addons.js"></script>
+<script src="data/changelog.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

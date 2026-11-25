@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="dark">
+<title>Owner page - Zac's addons</title>
+<link rel="stylesheet" href="assets/site.css">
+<style>
+  .own { padding-block: 2.5rem 4rem; display: grid; gap: 2.25rem; max-width: 50rem; }
+  .own section { display: grid; gap: 0.8rem; }
+  .own p, .own li { color: var(--bone-dim); max-width: 66ch; }
+  .own strong { color: var(--bone); }
+  .own ol { margin: 0; padding-left: 1.3rem; display: grid; gap: 0.4rem; }
+  .own pre { margin: 0; background: var(--sunk); border: 1px solid var(--line); border-radius: var(--r); padding: 0.9rem 1rem; overflow-x: auto; font: 0.9rem/1.5 var(--mono); color: var(--bone); }
+  .own .row { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; }
+  .own .opts { display: grid; gap: 0.6rem; }
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap top-in">
+  <a class="brand" href="./">Zac's addons</a>
+  <nav class="nav"><a href="./">Back to the site</a></nav>
+</div></header>
+
+<main class="wrap own">
+  <div>
+    <h1 class="page-h">Owner page</h1>
+    <p class="sub">For Zac. Wire the report form to Discord, test it, and see how the rest of the site is kept up. Nothing you type here is saved or sent anywhere except to Discord when you press the test button.</p>
+  </div>
+
+  <section>
+    <h2>1. Make a webhook in Discord</h2>
+    <ol>
+      <li>Pick the channel reports should land in. A private channel only you can see is best. A <strong>forum channel</strong> is even better: every report becomes its own post you can answer, tag and close.</li>
+      <li>Server Settings, then Integrations, then Webhooks, then New Webhook.</li>
+      <li>Give it a name, pick the channel, press Copy Webhook URL.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>2. Paste it here and test it</h2>
+    <label class="block"><span>Webhook address</span>
+      <input type="text" id="hook" autocomplete="off" spellcheck="false" placeholder="https://discord.com/api/webhooks/…">
+    </label>
+    <div class="opts">
+      <label class="check"><input type="checkbox" id="forum"><span>That channel is a forum channel</span></label>
+      <label class="block"><span>Ping me for every report <em>optional: your Discord user ID, digits only</em></span>
+        <input type="text" id="ping" inputmode="numeric" autocomplete="off" placeholder="Leave empty for no ping">
+      </label>
+    </div>
+    <div class="row">
+      <button type="button" class="btn btn-go" id="test">Send a test report</button>
+      <span class="hint" id="state" role="status" aria-live="polite"></span>
+    </div>
+    <div class="note" id="out" hidden></div>
+  </section>
+
+  <section>
+    <h2>3. Put it in config.js</h2>
+    <p>Open <code>config.js</code> in the site's folder and replace the three lines with these. Then commit and push in GitHub Desktop. The site picks it up about a minute later.</p>
+    <pre id="snippet"></pre>
+    <div class="row"><button type="button" class="btn" id="copy">Copy these lines</button></div>
+  </section>
+
+  <section>
+    <h2>If someone posts junk through it</h2>
+    <p>The address sits in a file anyone can read, so someone who goes looking could post into that channel. It cannot read anything, ping anyone or touch the rest of your server. If it happens: delete the webhook in Discord, make a new one, and paste the new address into <code>config.js</code>. Two minutes.</p>
+    <p>If it keeps happening, <code>extras/relay-worker.js</code> hides the address behind a small free relay. Its first lines say how to set it up.</p>
+  </section>
+
+  <section>
+    <h2>Keeping the site up to date</h2>
+    <ol>
+      <li><strong>New versions</strong> show up by themselves. The site reads each addon's releases from GitHub every time someone opens it.</li>
+      <li><strong>Known problems</strong>: open an issue yourself in the addon's GitHub repository and it shows on the site. Someone else's issue shows once you give it the label <code>known</code>. Close the issue and it is gone.</li>
+      <li><strong>Per-game tags</strong> (the small Classic Era / WoW Forever marks) come from the history built into the site. Ask Claude to "rebuild the site's changelog" after a release to refresh them.</li>
+    </ol>
+  </section>
+</main>
+
+<script src="config.js"></script>
+<script>
+(function () {
+  "use strict";
+  function $(id) { return document.getElementById(id); }
+  var RE = /^https:\/\/(?:(?:canary|ptb)\.)?discord(?:app)?\.com\/api\/webhooks\/\d+\/[\w-]+$/i;
+  var cfg = window.SITE_CONFIG || {};
+  $("forum").checked = !!cfg.reportsAreForumPosts;
+  $("ping").value = cfg.pingUserId || "";
+
+  function hook() { return $("hook").value.trim().replace(/\?.*$/, ""); }
+  function ping() { var p = $("ping").value.trim(); return /^\d{5,25}$/.test(p) ? p : ""; }
+  function snippet() {
+    $("snippet").textContent =
+      '  reportWebhook: "' + (RE.test(hook()) ? hook() : "") + '",\n' +
+      "  reportsAreForumPosts: " + ($("forum").checked ? "true" : "false") + ",\n" +
+      '  pingUserId: "' + ping() + '",';
+  }
+  function say(warn, text) { var o = $("out"); o.className = "note" + (warn ? " note-warn" : ""); o.textContent = text; o.hidden = false; }
+
+  ["hook", "ping"].forEach(function (id) { $(id).addEventListener("input", snippet); });
+  $("forum").addEventListener("change", snippet);
+  snippet();
+
+  $("copy").addEventListener("click", function () {
+    var t = $("snippet").textContent;
+    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(
+      function () { $("state").textContent = "Copied."; },
+      function () { var r = document.createRange(); r.selectNodeContents($("snippet")); var s = getSelection(); s.removeAllRanges(); s.addRange(r); $("state").textContent = "Selected. Press Ctrl+C."; });
+  });
+
+  $("test").addEventListener("click", function () {
+    var url = hook();
+    if (!RE.test(url)) { say(true, "That does not look like a Discord webhook address. It starts with https://discord.com/api/webhooks/ followed by a number and a long code."); return; }
+    var p = ping(), ref = "TEST-" + Math.random().toString(36).slice(2, 6).toUpperCase();
+    var body = {
+      username: "Addon reports", content: p ? "<@" + p + ">" : "",
+      allowed_mentions: { parse: [], users: p ? [p] : [] },
+      attachments: [{ id: 0, filename: ref + ".txt" }],
+      embeds: [{
+        title: "ZacUI 3.0.19: Something is broken",
+        description: "This is a test from the owner page. A real report puts what the player wrote here.",
+        color: 0xD9785A,
+        fields: [
+          { name: "Game", value: "Classic Era", inline: true }, { name: "How often", value: "Every time", inline: true },
+          { name: "Where", value: "In a raid, during a fight", inline: true },
+          { name: "Did just before", value: "1. Joined a raid.\n2. Opened the bags." },
+          { name: "Error text", value: "```\nThe first lines of the error. The whole text is in the attached file.\n```" },
+          { name: "Discord", value: "theirname", inline: true }
+        ],
+        footer: { text: ref }, timestamp: new Date().toISOString()
+      }]
+    };
+    if ($("forum").checked) body.thread_name = "[ZUI 3.0.19] Test report from the owner page";
+    var fd = new FormData();
+    fd.append("payload_json", JSON.stringify(body));
+    fd.append("files[0]", new Blob(["Test report " + ref + "\nThe full text of a report is attached like this, error text and all."], { type: "text/plain" }), ref + ".txt");
+    $("state").textContent = "Sending…"; $("out").hidden = true;
+    fetch(url + "?wait=true", { method: "POST", body: fd }).then(function (res) {
+      $("state").textContent = "";
+      if (res.ok) { say(false, "Sent. Look in the channel: there should be a test report with a small text file attached. If it looks right, go on to step 3."); return; }
+      return res.json().catch(function () { return {}; }).then(function (j) {
+        if (j.code === 220001) say(true, "Discord says that channel is a forum channel. Tick the box above and test again.");
+        else if (j.code === 220003) say(true, "Discord says that channel is not a forum channel. Untick the box above and test again.");
+        else if (res.status === 404 || res.status === 401) say(true, "Discord does not know that webhook. It was deleted, or part of the address is missing. Copy it again from Discord.");
+        else if (res.status === 429) say(true, "Discord is rate limiting. Wait a few seconds and try again.");
+        else say(true, "Discord refused it (" + res.status + (j.message ? ": " + j.message : "") + ").");
+      });
+    }).catch(function () { $("state").textContent = ""; say(true, "Could not reach Discord from this browser. Check your connection, or an ad blocker that blocks discord.com."); });
+  });
+})();
+</script>
+</body>
+</html>
