@@ -668,6 +668,12 @@
     var body = cut(reportText(r, "", true), 5500);
     return "https://github.com/" + USER + "/" + r.a.repo + "/issues/new?title=" + encodeURIComponent(cut((r.version && r.version !== "older" ? "[" + r.version + "] " : "") + r.what.replace(/\s+/g, " "), 90)) + "&body=" + encodeURIComponent(body);
   }
+  // The post in Discord carries everything. The whole report is only attached as a text file when
+  // the post had to cut something short (a long error, a long description).
+  function needsFile(r) {
+    return r.what.length > 1800 || String(r.error || "").length > 900 ||
+      [r.why, r.steps, r.expected, r.others].some(function (v) { return String(v || "").length > 1000; });
+  }
   function discordBody(r, ref) {
     var fields = [];
     function add(name, value, inline) { if (value) fields.push({ name: name, value: cut(value, 1000), inline: !!inline }); }
@@ -690,9 +696,11 @@
     };
     if (shot) embed.image = { url: "attachment://" + shot.name };
     var ping = /^\d{5,25}$/.test(String(CFG.pingUserId || "")) ? String(CFG.pingUserId) : "";
-    var files = [{ id: 0, filename: ref + ".txt" }];
-    if (shot) files.push({ id: 1, filename: shot.name });
-    var body = { username: "Addon reports", content: ping ? "<@" + ping + ">" : "", allowed_mentions: { parse: [], users: ping ? [ping] : [] }, embeds: [embed], attachments: files };
+    var files = [];
+    if (needsFile(r)) files.push({ id: files.length, filename: ref + ".txt" });
+    if (shot) files.push({ id: files.length, filename: shot.name });
+    var body = { username: "Addon reports", content: ping ? "<@" + ping + ">" : "", allowed_mentions: { parse: [], users: ping ? [ping] : [] }, embeds: [embed] };
+    if (files.length) body.attachments = files;
     if (CFG.reportsAreForumPosts) body.thread_name = cut("[" + r.a.code + (r.kind === "idea" ? " idea" : r.version && r.version !== "older" ? " " + r.version : "") + "] " + r.what.replace(/\s+/g, " "), 95);
     return body;
   }
@@ -724,8 +732,9 @@
 
     var fd = new FormData(), text = reportText(r, ref);
     fd.append("payload_json", JSON.stringify(discordBody(r, ref)));
-    fd.append("files[0]", new Blob([text], { type: "text/plain" }), ref + ".txt");
-    if (shot) fd.append("files[1]", shot.blob, shot.name);
+    var nFile = 0;
+    if (needsFile(r)) fd.append("files[" + (nFile++) + "]", new Blob([text], { type: "text/plain" }), ref + ".txt");
+    if (shot) fd.append("files[" + (nFile++) + "]", shot.blob, shot.name);
     var url = webhook;
     if (isDiscord && !/[?&]wait=/.test(url)) url += (url.indexOf("?") === -1 ? "?" : "&") + "wait=true";
     var btn = $("r-send"), label = btn.textContent;

@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="color-scheme" content="dark">
 <title>Owner page - Zac's addons</title>
-<link rel="stylesheet" href="assets/site.css?v=5">
+<link rel="stylesheet" href="assets/site.css?v=6">
 <style>
   .own { padding-block: 2.5rem 4rem; display: grid; gap: 2.25rem; max-width: 50rem; }
   .own section { display: grid; gap: 0.8rem; }
@@ -120,7 +120,6 @@
     var body = {
       username: "Addon reports", content: p ? "<@" + p + ">" : "",
       allowed_mentions: { parse: [], users: p ? [p] : [] },
-      attachments: [{ id: 0, filename: ref + ".txt" }],
       embeds: [{
         title: "ZacUI 3.0.19: Something is broken",
         description: "This is a test from the owner page. A real report puts what the player wrote here.",
@@ -129,7 +128,7 @@
           { name: "Game", value: "Classic Era", inline: true }, { name: "How often", value: "Every time", inline: true },
           { name: "Where", value: "In a raid, during a fight", inline: true },
           { name: "Did just before", value: "1. Joined a raid.\n2. Opened the bags." },
-          { name: "Error text", value: "```\nThe first lines of the error. The whole text is in the attached file.\n```" },
+          { name: "Error text", value: "```\nThe error text the player pasted.\n```" },
           { name: "Discord", value: "theirname", inline: true }
         ],
         footer: { text: ref }, timestamp: new Date().toISOString()
@@ -138,11 +137,10 @@
     if ($("forum").checked) body.thread_name = "[ZUI 3.0.19] Test report from the owner page";
     var fd = new FormData();
     fd.append("payload_json", JSON.stringify(body));
-    fd.append("files[0]", new Blob(["Test report " + ref + "\nThe full text of a report is attached like this, error text and all."], { type: "text/plain" }), ref + ".txt");
     $("state").textContent = "Sending…"; $("out").hidden = true;
     fetch(url + "?wait=true", { method: "POST", body: fd }).then(function (res) {
       $("state").textContent = "";
-      if (res.ok) { say(false, "Sent. Look in the channel: there should be a test report with a small text file attached. If it looks right, go on to step 3."); return; }
+      if (res.ok) { say(false, "Sent. Look in the channel: there should be a test report. If it looks right, go on to step 3."); return; }
       return res.json().catch(function () { return {}; }).then(function (j) {
         if (j.code === 220001) say(true, "Discord says that channel is a forum channel. Tick the box above and test again.");
         else if (j.code === 220003) say(true, "Discord says that channel is not a forum channel. Untick the box above and test again.");
