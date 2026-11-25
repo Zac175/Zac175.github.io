@@ -506,7 +506,7 @@
   }
 
   // ------------------------------------------------------------------ report
-  var form, shot = null, opened = Date.now();
+  var form, shot = null, opened = Date.now(), sendFailed = false;
   var DISCORD_HOOK = /^https:\/\/(?:(?:canary|ptb)\.)?discord(?:app)?\.com\/api\/webhooks\/\d+\/[\w-]+/i;
   // where a report of this kind goes: suggestions may have a channel of their own
   function hookFor(k) {
@@ -557,7 +557,11 @@
   // the buttons and the lines around them, for a kind that can or cannot be sent from here
   function sendMode() {
     var k = kind(), K = KIND[k], can = canSendKind(k), who = CFG.discordName || "Zac";
+    // with a channel to send to there is ONE button; the other two ways only come up when there is
+    // no channel, or when a send has just failed
+    var other = !can || sendFailed;
     $("r-send").hidden = !can;
+    $("r-copy").hidden = !other; $("r-issue").hidden = !other;
     $("r-copy").className = can ? "btn btn-quiet" : "btn btn-go btn-big";
     $("r-copy").textContent = k === "idea" ? "Copy the suggestion" : k === "question" ? "Copy the question" : "Copy the report text";
     $("report-intro").textContent = can ? K.intro : K.intro.replace(/\s*Leave your Discord name.*$/, "") + " Fill it in, then copy the text and send it over.";
@@ -695,6 +699,7 @@
 
   function result(kindOfNote, nodes) { var box = $("r-result"); box.className = "note" + (kindOfNote === "warn" ? " note-warn" : ""); fill(box, nodes); box.hidden = false; }
   function showDone(r, ref, sent) {
+    sendFailed = false;
     $("report-form").hidden = true; $("report-intro").hidden = true;
     $("done-h").textContent = KIND[r.kind].done;
     $("done-p").textContent = r.contact
@@ -734,6 +739,7 @@
       if (res.status === 413) { result("warn", "The screenshot is too big for Discord. Remove it and send again, then mention that you have one."); return; }
       throw new Error("status " + res.status);
     }).catch(function () {
+      sendFailed = true; sendMode();
       result("warn", [
         el("p", null, [el("strong", { text: "The report did not go through." }), " Nothing you wrote is lost."]),
         el("p", null, ["Press “Copy the report text” and send it to " + (CFG.discordName || "Zac") + " on Discord, or open it on GitHub instead."])
@@ -809,7 +815,7 @@
     $("r-issue").href = issueLink(gather());
   }
   function openReport(q, want) {
-    $("report-done").hidden = true; form.hidden = false; $("report-intro").hidden = false; opened = Date.now();
+    $("report-done").hidden = true; form.hidden = false; $("report-intro").hidden = false; opened = Date.now(); sendFailed = false;
     if (KIND[q.type]) want = q.type;
     if (want && want !== kind()) form.querySelector('input[name="type"][value="' + want + '"]').checked = true;
     onKind();
