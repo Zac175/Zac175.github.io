@@ -534,7 +534,15 @@
   var form, shot = null, opened = Date.now(), sendFailed = false;
   var DISCORD_HOOK = /^https:\/\/(?:(?:canary|ptb)\.)?discord(?:app)?\.com\/api\/webhooks\/\d+\/[\w-]+/i;
   // where a report of this kind goes: suggestions may have a channel of their own
+  // On zacaddons.com the site's own server (/api/report) takes reports: it keeps them for the
+  // admin panel and passes them on to Discord, so no webhook address has to sit in config.js.
+  // Until it answers that it is ready, reports go the old way (config.js).
+  var ON_SITE = /(^|\.)zacaddons\.com$/.test(location.hostname), RELAY = "";
   function hookFor(k) {
+    if (RELAY) return RELAY + (k === "idea" ? "?kind=idea" : "");
+    return directHook(k);
+  }
+  function directHook(k) {
     var ideas = String(CFG.ideasWebhook || "").trim(), main = String(CFG.reportWebhook || "").trim();
     var url = k === "idea" && /^https:\/\/[^\s]+$/i.test(ideas) ? ideas : main;
     return /^https:\/\/[^\s]+$/i.test(url) ? url : "";
@@ -749,23 +757,32 @@
     if (tooShort) { $("r-what").focus(); return; }
     var ref = makeRef(r.a);
     if (val("r-site")) { showDone(r, ref, false); return; }                      // a script filled the hidden field
-    var webhook = hookFor(r.kind), isDiscord = DISCORD_HOOK.test(webhook);
+    var webhook = hookFor(r.kind);
     if (!webhook) { copyText(reportText(r, ref), "Copied"); return; }
     var recent = store.get("sent", []).filter(function (t) { return Date.now() - t < 10 * 60 * 1000; });
     if (recent.length >= 3) { result("warn", "That is three reports in ten minutes. Give it a few minutes, or put the rest into one report."); return; }
     if (Date.now() - opened < 4000) { result("warn", "That was quick. Read it over once and press send again."); opened = 0; return; }
 
-    var fd = new FormData(), text = reportText(r, ref);
-    fd.append("payload_json", JSON.stringify(discordBody(r, ref)));
-    var nFile = 0;
-    if (needsFile(r)) fd.append("files[" + (nFile++) + "]", new Blob([text], { type: "text/plain" }), ref + ".txt");
-    if (shot) fd.append("files[" + (nFile++) + "]", shot.blob, shot.name);
-    var url = webhook;
-    if (isDiscord && !/[?&]wait=/.test(url)) url += (url.indexOf("?") === -1 ? "?" : "&") + "wait=true";
+    var text = reportText(r, ref), viaRelay = RELAY && webhook.indexOf(RELAY) === 0;
+    function body(withMeta) {
+      var fd = new FormData();
+      fd.append("payload_json", JSON.stringify(discordBody(r, ref)));
+      if (withMeta) fd.append("meta", JSON.stringify({ ref: ref, kind: r.kind, addon: r.a.id, version: r.version, game: r.game, what: r.what, contact: r.contact }));
+      var nFile = 0;
+      if (needsFile(r)) fd.append("files[" + (nFile++) + "]", new Blob([text], { type: "text/plain" }), ref + ".txt");
+      if (shot) fd.append("files[" + (nFile++) + "]", shot.blob, shot.name);
+      return fd;
+    }
+    function withWait(u) { return DISCORD_HOOK.test(u) && !/[?&]wait=/.test(u) ? u + (u.indexOf("?") === -1 ? "?" : "&") + "wait=true" : u; }
     var btn = $("r-send"), label = btn.textContent;
     btn.disabled = true; btn.textContent = "Sending…";
-    fetch(url, { method: "POST", body: fd }).then(function (res) {
-      if (res.ok) { showDone(r, ref, true); return; }
+    var direct = directHook(r.kind);
+    var go = fetch(withWait(webhook), { method: "POST", body: body(viaRelay) });
+    if (viaRelay && direct) go = go.then(function (res) {      // the site's server is down: the old way
+      return res.ok || res.status === 429 || res.status === 413 ? res : fetch(withWait(direct), { method: "POST", body: body(false) });
+    }, function () { return fetch(withWait(direct), { method: "POST", body: body(false) }); });
+    go.then(function (res) {
+      if (res.ok) { showDone(r, ref, true); count({ t: "sent", k: r.kind }); return; }
       if (res.status === 429) return res.json().catch(function () { return {}; }).then(function (j) {
         var wait = Math.ceil(Number(j.retry_after) || 5);
         result("warn", "Discord is busy right now. Try again in " + plural(wait, "second") + ". Nothing you wrote is lost.");
@@ -907,6 +924,15 @@
       if (a.getAttribute("data-nav") === name) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
     });
   }
+  // a page view or a download, counted by the site's own server: no cookies, nothing about you kept
+  function count(b) {
+    if (!ON_SITE) return;
+    try {
+      var data = JSON.stringify(b);
+      if (navigator.sendBeacon) navigator.sendBeacon("/api/hit", new Blob([data], { type: "text/plain" }));
+      else fetch("/api/hit", { method: "POST", body: data, keepalive: true });
+    } catch (e) { /* counting is never worth an error */ }
+  }
   var first = true;
   function route() {
     var h = location.hash.replace(/^#\/?/, ""), qi = h.indexOf("?");
@@ -927,6 +953,7 @@
     if (shown === "report") openReport(q, view === "suggest" ? "idea" : "bug");
     if (!(view === "changelog" && log.target)) window.scrollTo(0, 0);
     if (!first) $("main").focus({ preventScroll: true });
+    count({ t: "view", p: "/#/" + (path[0] || ""), r: first && document.referrer ? (function () { try { return new URL(document.referrer).hostname; } catch (e) { return ""; } })() : "" });
     first = false;
   }
 
@@ -934,6 +961,22 @@
     drawRoster(); drawSinceForm();
     if (!$("view-changelog").hidden) { drawLogTabs(); drawLogTools(); drawLog(); }
     if (form) { var v = val("r-version"), g = val("r-game"); fillVersionSelect($("r-version"), addonPick(), v, true); fillGameSelect($("r-game"), addonPick(), g, "Not sure"); onVersion(); }
+  }
+
+  // data/site.json, written by the admin panel: the headline, the line under it, and a notice
+  function loadSiteText() {
+    fetch("data/site.json?t=" + Math.floor(Date.now() / 60000), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      if (!j) return;
+      var h1 = document.querySelector(".hero-say h1"), lede = document.querySelector(".hero-say .lede");
+      if (j.headline && h1) h1.textContent = String(j.headline);
+      if (j.lede && lede) { var keep = $("lede-discord"); lede.textContent = String(j.lede); if (keep) lede.appendChild(keep); }
+      var n = j.notice, box = $("site-notice");
+      if (box && n && n.text && (!n.until || Date.parse(n.until) > Date.now())) {
+        box.className = "note site-notice" + (n.kind === "warn" ? " note-warn" : "");
+        fill(box, [el("p", null, [String(n.text), n.link ? " " : null, n.link ? el("a", { href: String(n.link), text: String(n.linkText || "Read more") }) : null])]);
+        box.hidden = false;
+      }
+    }).catch(function () { /* the built-in text stays */ });
   }
 
   function start() {
@@ -949,6 +992,14 @@
 
     window.addEventListener("hashchange", route);
     route();
+    document.addEventListener("click", function (ev) {   // which download buttons get used
+      var a = ev.target.closest && ev.target.closest(".r-act a"), row = a && a.closest(".r-row");
+      if (row) count({ t: "download", a: row.getAttribute("data-addon"), w: /curseforge/.test(a.href) ? "curseforge" : a.textContent === "Zip" ? "zip" : "download" });
+    });
+    loadSiteText();
+    if (ON_SITE) fetch("/api/health", { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      if (j && j.ok && j.discord) { RELAY = "/api/report"; canSend = true; if (form) sendMode(); $("lede-discord").hidden = false; }
+    }).catch(function () { /* the old way stays */ });
 
     // The ready check: each addon ticks when GitHub has answered for it, one after the other.
     var calm = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;

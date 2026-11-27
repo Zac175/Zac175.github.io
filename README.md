@@ -18,11 +18,47 @@ about a minute later.
 
 ## The address
 
-The site is at https://zacaddons.com/ (registered at Porkbun). The `CNAME` file
-in this repository tells GitHub to serve it there, and Porkbun's DNS has an
-ALIAS record for `zacaddons.com` and a CNAME for `www` pointing at
-`zac175.github.io`. The old https://zac175.github.io/ address forwards to the new
-one, so links in older addon versions keep working. Don't delete `CNAME`.
+The site is at https://zacaddons.com/ (registered at Porkbun). Porkbun points
+the domain at Cloudflare's nameservers; Cloudflare holds the DNS records and
+sits in front of GitHub Pages (encryption "Full", http goes to https). The
+`CNAME` file in this repository tells GitHub to serve the site there. The old
+https://zac175.github.io/ address forwards to the new one, so links in older
+addon versions keep working. Don't delete `CNAME`.
+
+Google: the domain is verified in Google Search Console (a TXT record at
+Cloudflare; don't delete it) and `sitemap.xml` lists the pages.
+
+## The admin panel
+
+https://zacaddons.com/admin/ - for Zac only. Inbox of every report and
+suggestion, stats, release check, editing the site without GitHub Desktop, and
+the sign-in history. It is not linked from anywhere and search engines are told
+to stay out.
+
+It runs on a small Cloudflare Worker, `zacaddons-admin` (source:
+`extras/admin-worker.js`), on the routes `zacaddons.com/api/*` and
+`zacaddons.com/admin/api/*`, with a D1 database (`DB`) and a KV store for
+screenshots (`FILES`). Sign-in is a password plus a code from an authenticator
+app; the password is only stored as a one-way hash and nothing secret is in
+this repository.
+
+Setting it up (once):
+
+1. Cloudflare > Workers & Pages > `zacaddons-admin` > Settings > Variables and
+   Secrets > Add > type **Secret**, name `DISCORD_WEBHOOK`, value: your Discord
+   webhook address. (Optional: `IDEAS_WEBHOOK` for suggestions in their own
+   channel.)
+2. GitHub > Settings > Developer settings > Fine-grained tokens > Generate:
+   repository access "Only select repositories": Zac175.github.io, ZacUI,
+   Readycheck, OldRaidFrames, StackedRaidGroups, WowTiler, MultiLauncher;
+   permissions: Contents read and write, Issues read and write, Actions read.
+   Add it to the worker the same way as step 1, name `GITHUB_TOKEN`.
+3. Open https://zacaddons.com/admin/ and follow it: a code goes to Discord, you
+   add the key to your authenticator app and pick a password.
+
+Once the worker has the webhook, the site sends reports through it (so they
+land in the inbox too) and `reportWebhook` in `config.js` can be emptied: the
+address is then no longer public.
 
 ## What keeps itself up to date
 
@@ -58,7 +94,13 @@ page. Add an entry there and the addon appears on every page.
     assets/site.js        everything the pages do
     assets/fonts/         Marcellus and Alegreya Sans (SIL Open Font License, texts alongside)
     data/                 the addon list and the built-in history
-    extras/relay-worker.js   optional: hides the webhook address behind a relay
+    extras/relay-worker.js   older optional relay (the admin worker does this now)
+    extras/admin-worker.js   the site's server: reports, counting, the admin panel
+    admin/                   the admin panel's page
+    data/site.json           headline, intro line and notice, set from the admin panel
+    robots.txt, sitemap.xml  for search engines
 
-No build step, no libraries, no tracking, no cookies. The browser remembers a
+No build step, no libraries, no cookies. Page views and download clicks are
+counted by the site's own worker without cookies and without keeping anything
+about a visitor. The browser remembers a
 half-written report and the last picks on the page, on that device only.
