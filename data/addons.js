@@ -25,6 +25,7 @@ window.ZAC_ADDONS = [
       ["/zui timers", "What the pull and break timers asked for and heard. Send this when a timer bar did not show."],
       ["/zui perf", "What ZacUI is costing you right now."],
       ["/zui macros", "The macro cleaner."],
+      ["/zui report", "A link to the report form on this site, with your version and game filled in. /zui suggest does the same for an idea."],
     ],
   },
   {
@@ -36,11 +37,12 @@ window.ZAC_ADDONS = [
     code: "RC",
     games: ["era", "tbc", "forever"],
     line: "The raid toolkit: reminders, consumables, gear and trinket swaps, world buffs, routes and time-to-kill.",
-    version: "The addon list in game shows it in the name, like Readycheck 5.0.13.",
+    version: "The addon list in game shows it in the name, like Readycheck 5.0.14.",
     commands: [
       ["/rc", "Open Readycheck."],
       ["/rc flavor", "Which features are on for the game version you are playing."],
       ["/wb", "The world buff tracker for you and your other characters."],
+      ["/rc report", "A link to the report form on this site, with your version and game filled in. /rc suggest does the same for an idea."],
     ],
   },
   {
@@ -58,6 +60,7 @@ window.ZAC_ADDONS = [
       ["/orf unlock", "Unlock the frames so you can drag them."],
       ["/orf profile", "The profile manager."],
       ["/orf help", "Every command it has."],
+      ["/orf report", "A link to the report form on this site, with your version and game filled in. /orf suggest does the same for an idea."],
     ],
   },
   {
@@ -74,6 +77,7 @@ window.ZAC_ADDONS = [
       ["/srg", "Open the options."],
       ["/srg status", "What the addon is doing right now, and its version. Paste this into a report."],
       ["/srg guard", "What the combat guard does, and how to switch it off."],
+      ["/srg report", "A link to the report form on this site, with your version and game filled in. /srg suggest does the same for an idea."],
     ],
   },
   {
