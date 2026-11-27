@@ -4,17 +4,25 @@ The page players use to get the newest version of ZacUI, Readycheck,
 DefaultFrames, Stacked Raid Groups, WowTiler and MultiLauncher, see what changed since the version they
 have, report a problem and suggest a feature. Reports go to Discord.
 
-Live at https://zac175.github.io/
+Live at https://zacaddons.com/
 
 ## The one file you edit
 
 `config.js`. It says where reports go (your Discord webhook), whether that
 channel is a forum channel, whether to ping you, and how players reach you.
-Open `owner.html` on the live site (https://zac175.github.io/owner.html) to
+Open `owner.html` on the live site (https://zacaddons.com/owner.html) to
 test a webhook and get the exact lines to paste.
 
 After any change: save, commit and push in GitHub Desktop. The site updates
 about a minute later.
+
+## The address
+
+The site is at https://zacaddons.com/ (registered at Porkbun). The `CNAME` file
+in this repository tells GitHub to serve it there, and Porkbun's DNS has an
+ALIAS record for `zacaddons.com` and a CNAME for `www` pointing at
+`zac175.github.io`. The old https://zac175.github.io/ address forwards to the new
+one, so links in older addon versions keep working. Don't delete `CNAME`.
 
 ## What keeps itself up to date
 

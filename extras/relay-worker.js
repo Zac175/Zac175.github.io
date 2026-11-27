@@ -11,7 +11,7 @@
 //   2. Edit code: replace everything with this file. Deploy.
 //   3. Settings > Variables and Secrets > add two:
 //        DISCORD_WEBHOOK   (type Secret)  your webhook address
-//        ALLOWED_ORIGIN    (type Text)    https://zac175.github.io
+//        ALLOWED_ORIGIN    (type Text)    https://zacaddons.com
 //   4. In the site's config.js set reportWebhook to the worker's address
 //      (it looks like https://<name>.<you>.workers.dev). Commit and push.
 //

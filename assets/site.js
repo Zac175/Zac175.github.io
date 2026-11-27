@@ -314,11 +314,6 @@
     run();
   }
 
-  // the tick is the addons' own check mark; "away" is a plain dash
-  function tickSvg(away) {
-    if (away) return el("span", { class: "r-dash", "aria-hidden": "true" });
-    return el("img", { class: "r-check", src: "assets/icons/readycheck.png", alt: "", width: 22, height: 22 });
-  }
   // where "get the newest" goes: CurseForge for an addon; for a program its newest GitHub release
   function getLink(a) {
     if (a.curse) return a.curse;
@@ -331,7 +326,6 @@
     var zip = live.zip[v.v] || (fromRepo ? repoZip(a) : ""), exe = live.exe[v.v] || (fromRepo ? repoExe(a) : "");
     var title = titleFor(v);
     return el("li", { class: "r-row", "data-state": live.state, "data-addon": a.id }, [
-      el("span", { class: "r-tick" }, tickSvg(live.state === "away")),
       el("div", { class: "r-who" }, [
         glyph(a.id),
         el("h3", { text: a.name }),

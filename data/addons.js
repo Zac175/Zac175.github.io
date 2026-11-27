@@ -43,7 +43,7 @@ window.ZAC_ADDONS = [
     games: ["era", "tbc", "forever"],
     line: "The raid toolkit: reminders, consumables, gear and trinket swaps, world buffs, routes and time-to-kill.",
     version: "The addon list in game shows it in the name, like Readycheck 5.0.14.",
-    links: [["Route planner", "https://zac175.github.io/readycheck-routes/"]],
+    links: [["Route planner", "https://zacaddons.com/readycheck-routes/"]],
     commands: [
       ["/rc", "Open Readycheck."],
       ["/rc flavor", "Which features are on for the game version you are playing."],
