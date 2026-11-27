@@ -1,4 +1,4 @@
-// What this site covers: the four addons and WowTiler. One entry each; the
+// What this site covers: the four addons, WowTiler and MultiLauncher. One entry each; the
 // pages are built from this list, so adding one here adds it everywhere.
 //   repo        its GitHub repository (releases and known problems are read from it)
 //   curse       its CurseForge page
@@ -8,6 +8,11 @@
 //   icon        the addon's own icon, as it ships (assets/icons)
 //   kind        "app" for a Windows program: no CurseForge page and no game
 //               versions; its download is the newest GitHub release
+//   errorHint   (a program) what to paste into a report, shown under the error box
+//   feed        "repo" for a program without releases: its newest build is the exe on
+//               the main branch and its history is CHANGELOG.md there, so a push to
+//               the repository is all it takes for this site to show a new version
+//   links       extra links on its row: [text, address]
 window.ZAC_ADDONS = [
   {
     id: "zacui",
@@ -38,6 +43,7 @@ window.ZAC_ADDONS = [
     games: ["era", "tbc", "forever"],
     line: "The raid toolkit: reminders, consumables, gear and trinket swaps, world buffs, routes and time-to-kill.",
     version: "The addon list in game shows it in the name, like Readycheck 5.0.14.",
+    links: [["Route planner", "https://zac175.github.io/readycheck-routes/"]],
     commands: [
       ["/rc", "Open Readycheck."],
       ["/rc flavor", "Which features are on for the game version you are playing."],
@@ -91,6 +97,7 @@ window.ZAC_ADDONS = [
     games: [],
     line: "A small Windows app that tiles your WoW clients on one monitor or two, keeps every window 16:9, and swaps any client into the main slot with a Shift+click or a hotkey. It only moves and resizes windows.",
     version: "The window's title bar reads WoW Window Tiler and the version.",
+    errorHint: "WowTiler writes WowTiler.log next to the exe. Paste what is in it here.",
     commandsTitle: "WowTiler's keys",
     commands: [
       ["Shift + click an alt", "It becomes the main. The key can be changed."],
@@ -98,6 +105,28 @@ window.ZAC_ADDONS = [
       ["Ctrl+Alt+1 ... 9", "That slot becomes the main."],
       ["Ctrl+Alt+Home", "Tile everything again."],
       ["Ctrl+Alt+End", "Raid mode on or off: the main full-monitor and borderless."],
+    ],
+  },
+  {
+    id: "multilauncher",
+    icon: "assets/icons/multilauncher.png",
+    kind: "app",
+    name: "MultiLauncher",
+    repo: "MultiLauncher",
+    feed: "repo",
+    curse: "",
+    code: "ML",
+    games: [],
+    line: "A small Windows app that opens all your Battle.net accounts at once, each in its own launcher window, already signed in. Emails and passwords are stored encrypted. It never touches the game.",
+    version: "Open Options in MultiLauncher. The version is at the bottom, next to Clean up old versions.",
+    errorHint: "In MultiLauncher, open the Log section and paste what it shows here. It names no account.",
+    commandsTitle: "MultiLauncher's buttons",
+    commands: [
+      ["Launch all", "Opens every account in your list and ticks each one off as it comes up."],
+      ["Import from Battle.net", "Adds the accounts Battle.net already remembers."],
+      ["Desktop shortcut", "Makes a shortcut that closes open launchers and reopens every account."],
+      ["Options, then Look", "Dark or light windows."],
+      ["Options, then Undo B.net changes", "Puts Battle.net's own settings file back to an earlier copy."],
     ],
   },
 ];

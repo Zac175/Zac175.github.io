@@ -1,7 +1,7 @@
 # Zac's addons: the site
 
 The page players use to get the newest version of ZacUI, Readycheck,
-DefaultFrames, Stacked Raid Groups and WowTiler, see what changed since the version they
+DefaultFrames, Stacked Raid Groups, WowTiler and MultiLauncher, see what changed since the version they
 have, report a problem and suggest a feature. Reports go to Discord.
 
 Live at https://zac175.github.io/
@@ -35,8 +35,8 @@ on). GitHub's release text does not carry those marks, so releases newer than
 this file show without them until it is rebuilt.
 
 The colours are the addons' own (ZacUI's `Core_Colors.lua`), named at the top
-of `assets/site.css`; the icons in `assets/icons/` are the files the addons and
-WowTiler ship, as PNG.
+of `assets/site.css`; the icons in `assets/icons/` are the files the addons,
+WowTiler and MultiLauncher ship, as PNG.
 
 `data/addons.js` is the list of addons: names, links, the commands on the Help
 page. Add an entry there and the addon appears on every page.

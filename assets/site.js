@@ -2,7 +2,7 @@
    No build step and no libraries: this file, config.js and the two data files are the site.
 
    Where things come from
-     data/addons.js      the four addons (names, links, commands)
+     data/addons.js      the four addons and the two programs (names, links, commands)
      data/changelog.js   the version history as of the day it was built
      GitHub              releases newer than that, and known problems (read in the visitor's browser)
      config.js           where reports are sent
@@ -160,12 +160,12 @@
     return v;
   }
 
-  function cached(key, url, trim) {
+  function cached(key, url, trim, asText) {
     var hit = store.get("gh." + key, null);
     if (hit && Date.now() - hit.t < CACHE_MS) return Promise.resolve({ data: hit.d, at: hit.t });
-    return fetch(url, { headers: { Accept: "application/vnd.github+json" } }).then(function (r) {
+    return fetch(url, asText ? {} : { headers: { Accept: "application/vnd.github+json" } }).then(function (r) {
       if (!r.ok) throw new Error("GitHub answered " + r.status);
-      return r.json();
+      return asText ? r.text() : r.json();
     }).then(function (j) {
       var d = trim(j); store.set("gh." + key, { t: Date.now(), d: d }); return { data: d, at: Date.now() };
     }).catch(function (e) {
@@ -174,15 +174,44 @@
     });
   }
 
+  // A program with feed: "repo" has no releases: its newest build and its history are
+  // files in the repository itself (the exe and CHANGELOG.md), so a plain push updates
+  // this site. The download is always the file on the main branch.
+  function repoBranch(a) { return a.branch || "main"; }
+  function repoExe(a) { return "https://github.com/" + USER + "/" + a.repo + "/raw/" + repoBranch(a) + "/" + (a.exe || a.repo + ".exe"); }
+  function repoZip(a) { return "https://github.com/" + USER + "/" + a.repo + "/archive/refs/heads/" + repoBranch(a) + ".zip"; }
+  // CHANGELOG.md -> the same list a releases answer gives. One "# Name 1.2.3: Title" block
+  // per version, newest first, with the day it came out on a line of its own (2026-11-27).
+  function repoLog(a, text) {
+    var out = [], cur = null;
+    String(text || "").replace(/\r/g, "").split("\n").forEach(function (line) {
+      var h = /^#\s+(.*)$/.exec(line), m;
+      if (h) {
+        m = /(\d+(?:\.\d+)+)/.exec(h[1]);
+        cur = m ? { tag: "v" + m[1], date: "", body: line + "\n", page: "https://github.com/" + USER + "/" + a.repo, zip: "", exe: "" } : null;
+        if (cur) out.push(cur);
+        return;
+      }
+      if (!cur) return;
+      if (!cur.date && (m = /^\s*(\d{4}-\d{2}-\d{2})\s*$/.exec(line))) { cur.date = m[1]; return; }
+      cur.body += line + "\n";
+    });
+    out.sort(function (x, y) { return cmp(y.tag.slice(1), x.tag.slice(1)); });
+    if (out.length) { out[0].exe = repoExe(a); out[0].zip = repoZip(a); }
+    return out;
+  }
+
   function loadReleases(a) {
-    var url = "https://api.github.com/repos/" + USER + "/" + a.repo + "/releases?per_page=20";
-    return cached("rel." + a.id, url, function (list) {
+    var fromRepo = a.feed === "repo";
+    var url = fromRepo ? "https://raw.githubusercontent.com/" + USER + "/" + a.repo + "/" + repoBranch(a) + "/CHANGELOG.md"
+                       : "https://api.github.com/repos/" + USER + "/" + a.repo + "/releases?per_page=20";
+    return cached("rel." + a.id, url, fromRepo ? function (text) { return repoLog(a, text); } : function (list) {
       return (Array.isArray(list) ? list : []).filter(function (r) { return !r.draft && !r.prerelease; }).map(function (r) {
         var zip = (r.assets || []).filter(function (x) { return /\.zip$/i.test(x.name); })[0];
         var exe = (r.assets || []).filter(function (x) { return /\.exe$/i.test(x.name); })[0];
         return { tag: r.tag_name, date: r.published_at, body: r.body, page: r.html_url, zip: zip ? zip.browser_download_url : "", exe: exe ? exe.browser_download_url : "" };
       });
-    }).then(function (res) {
+    }, fromRepo).then(function (res) {
       var have = {}; VERS[a.id].forEach(function (v) { have[v.v] = v; });
       var snapTop = VERS[a.id].length ? VERS[a.id][0].v : "0";
       res.data.forEach(function (rel) {
@@ -293,11 +322,13 @@
   // where "get the newest" goes: CurseForge for an addon; for a program its newest GitHub release
   function getLink(a) {
     if (a.curse) return a.curse;
+    if (a.feed === "repo") return repoExe(a);
     var v = newest(a.id).v, live = LIVE[a.id];
     return live.exe[v] || live.zip[v] || "https://github.com/" + USER + "/" + a.repo + "/releases/latest";
   }
   function rosterRow(a) {
-    var v = newest(a.id), live = LIVE[a.id], zip = live.zip[v.v];
+    var v = newest(a.id), live = LIVE[a.id], fromRepo = a.feed === "repo";
+    var zip = live.zip[v.v] || (fromRepo ? repoZip(a) : ""), exe = live.exe[v.v] || (fromRepo ? repoExe(a) : "");
     var title = titleFor(v);
     return el("li", { class: "r-row", "data-state": live.state, "data-addon": a.id }, [
       el("span", { class: "r-tick" }, tickSvg(live.state === "away")),
@@ -314,8 +345,8 @@
       ]),
       el("div", { class: "r-act" }, [
         a.curse ? el("a", { class: "btn btn-go", href: a.curse, target: "_blank", rel: "noopener", text: "Get it on CurseForge" })
-                : el("a", { class: "btn btn-go", href: getLink(a), target: live.exe[v.v] || zip ? null : "_blank", rel: "noopener", text: "Download",
-                    title: live.exe[v.v] ? a.name + " " + v.v + ", the program itself, from GitHub" : "The newest release on GitHub" }),
+                : el("a", { class: "btn btn-go", href: getLink(a), target: exe || zip ? null : "_blank", rel: "noopener", text: "Download",
+                    title: exe ? a.name + " " + v.v + ", the program itself, from GitHub" : "The newest release on GitHub" }),
         zip ? el("a", { class: "btn", href: zip, text: "Zip", title: a.name + " " + v.v + " as a zip file from GitHub" })
             : el("a", { class: "btn", href: "https://github.com/" + USER + "/" + a.repo + "/releases/latest", target: "_blank", rel: "noopener", text: "Zip", title: "The newest release on GitHub" })
       ]),
@@ -324,7 +355,7 @@
         el("a", { href: "#/changelog/" + a.id, text: "What changed" }),
         el("a", { href: "#/report?addon=" + a.id, text: "Report a problem" }),
         el("a", { href: "#/suggest?addon=" + a.id, text: "Suggest a feature" })
-      ])
+      ].concat((a.links || []).map(function (l) { return el("a", { href: l[1], text: l[0] }); })))
     ]);
   }
   var drawn = {};
@@ -533,7 +564,7 @@
     fillGameSelect($("r-game"), a.id, keepGame || "", "Not sure");
     $("r-version-hint").textContent = "Where to find it: " + a.version;
     $("r-error-hint").textContent = a.id === "stacked" ? "For this addon, what /srg status prints helps a lot. Paste it here too."
-      : a.kind === "app" ? "WowTiler writes WowTiler.log next to the exe. Paste what is in it here."
+      : a.kind === "app" ? (a.errorHint || "Paste what its log says here.")
       : "Long errors are fine. The whole text is sent along as a file.";
     // a program is not in the game: no class, no raid, no other addons
     Array.prototype.forEach.call(form.querySelectorAll(".gameonly"), function (n) { n.hidden = a.kind === "app"; });

@@ -298,7 +298,8 @@ table.games { border-collapse: collapse; width: 100%; font-size: 0.97rem; }
 @media (max-width: 40rem) {
   body { font-size: 1rem; }
   .top-in { gap: 0.4rem 1rem; }
-  .nav { order: 3; width: 100%; gap: 1.25rem; }
+  .nav { order: 3; width: 100%; gap: 0.3rem 0.9rem; flex-wrap: wrap; font-size: 0.94rem; }
+  .nav a { white-space: nowrap; }
   .since-form, .row2, .row3, .help-grid, .cmds { grid-template-columns: minmax(0, 1fr); }
   .log-tools { grid-template-columns: minmax(0, 1fr); }
   .ver { grid-template-columns: minmax(0, 1fr); }
