@@ -5,9 +5,9 @@
 .adm-out { margin-left: auto; }
 .adm-count { display: inline-block; min-width: 1.4em; padding: 0 0.35em; border-radius: 1em; background: var(--rust); color: var(--ready-ink); font-size: 0.8rem; font-weight: 700; text-align: center; line-height: 1.4; }
 
-.adm { padding-block: 2rem 4rem; display: grid; gap: 1.5rem; }
+.adm { padding-block: 2rem 4rem; display: grid; gap: 1.5rem; align-content: start; }
 .adm h2 { font: 400 1.25rem/1.3 var(--head-font); color: var(--bone); margin: 1.5rem 0 0.6rem; }
-.adm-gate { max-width: 34rem; display: grid; gap: 1rem; }
+.adm-gate { max-width: 34rem; display: grid; gap: 1rem; align-content: start; }
 .adm-gate .sub { color: var(--bone-dim); }
 .adm-form { display: grid; gap: 0.9rem; max-width: 40rem; }
 .adm-form label span { display: block; margin-bottom: 0.3rem; color: var(--bone-dim); font-size: 0.95rem; }
@@ -21,7 +21,7 @@
 .adm-msg.good { color: var(--ready); }
 
 .adm-steps { margin: 0; padding-left: 1.3rem; display: grid; gap: 1.4rem; }
-.adm-steps li { display: grid; gap: 0.7rem; justify-items: start; }
+.adm-steps li { display: grid; gap: 0.7rem; justify-items: start; align-content: start; }
 .adm-steps h2 { margin: 0; font-size: 1.1rem; }
 .adm-steps label, .adm-steps input { width: 100%; }
 .adm-key { font: 600 1.15rem/1.6 var(--mono); letter-spacing: 0.08em; background: var(--sunk); border: 1px solid var(--line); border-radius: var(--r); padding: 0.6rem 0.8rem; word-break: break-all; user-select: all; }
@@ -107,3 +107,5 @@ a.adm-card:hover { border-color: var(--gold); }
 textarea.adm-code { font: 0.85rem/1.5 var(--mono); min-height: 60vh; white-space: pre; tab-size: 2; }
 .adm-pane { display: grid; gap: 1rem; }
 .adm-detail:empty { display: none; }
+.adm input[type="password"], .adm input[type="date"] { width: 100%; font: inherit; color: var(--bone); background: var(--sunk); border: 1px solid var(--line); border-radius: var(--r); padding: 0.55em 0.7em; min-height: 2.6rem; }
+.adm input[type="password"]:hover, .adm input[type="date"]:hover { border-color: var(--bone-faint); }
